@@ -27,13 +27,12 @@ def test(images, dims, threshold, context):
         affines = y[0, :, :, 2:]
         labels = plate_labels(img, probs, affines, dims, 16, threshold)
         plates = reconstruct_plates(raw, labels)
-        plt.subplot(2, 1, 1)
+        plt.subplot(len(plates) + 2, 1, 1)
         visualize(img, [(pts.reshape((-1)).asnumpy().tolist(), str(prob)) for pts, prob in labels])
-        plt.subplot(2, 1, 2)
+        plt.subplot(len(plates) + 2, 1, 2)
         visualize(probs > threshold)
-        plt.show()
         for i, plate in enumerate(plates):
-            plt.subplot(len(plates), 1, i + 1)
+            plt.subplot(len(plates) + 2, 1, i + 3)
             visualize(plate)
         plt.show()
 
