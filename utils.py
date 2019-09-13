@@ -121,15 +121,19 @@ def point_in_polygon(x, y, pts):
             res = not res
     return res
 
-def object_label(image, points, stride):
-    height = image.shape[0] // stride
-    width = image.shape[1] // stride
-    label = mx.nd.zeros((height, width, 9))
-    for i in range(height):
-        y = (i + 0.5) / height
-        for j in range(width):
-            x = (j + 0.5) / width
+def object_label(points, dims, stride):
+    scale = ((dims + 40.0) / 2.0) / stride
+    size = dims // stride
+    label = mx.nd.zeros((size, size, 9))
+    for i in range(size):
+        y = (i + 0.5) / size
+        for j in range(size):
+            x = (j + 0.5) / size
             if point_in_polygon(x, y, points):
                 label[i, j, 0] = 1
-                label[i, j, 1:] = points
+                pts = mx.nd.array(points).reshape((2, -1))
+                pts = pts * dims / stride
+                pts = pts - mx.nd.array([[j + 0.5], [i + 0.5]])
+                pts = pts / scale
+                label[i, j, 1:] = pts.reshape((-1,))
     return label

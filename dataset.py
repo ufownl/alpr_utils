@@ -57,7 +57,7 @@ class Sampler:
     def __call__(self, data):
         img, pts = augment_sample(load_image(data[0]), data[1], self._dims)
         img = color_normalize(img)
-        lbl = object_label(img, pts, 16)
+        lbl = object_label(pts, self._dims, 16)
         return img.transpose((2, 0, 1)).expand_dims(0), lbl.expand_dims(0)
 
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     path, points, plate = dataset[0]
     image = load_image(path)
     image, points = augment_sample(image, points, 208)
-    label = object_label(image, points, 16)
+    label = object_label(points, 208, 16)
     plt.subplot(1, 2, 1)
     visualize(image, points, plate)
     plt.subplot(1, 2, 2)
