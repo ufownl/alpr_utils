@@ -2,7 +2,7 @@ import argparse
 import mxnet as mx
 import matplotlib.pyplot as plt
 from dataset import load_image, visualize, color_normalize
-from utils import plate_reconstruct
+from utils import plate_labels, reconstruct_plates
 from wpod_net import WpodNet
 
 
@@ -11,12 +11,13 @@ def test(images, dims, threshold, context):
     model = WpodNet()
     model.load_parameters("model/wpod_net.params", ctx=context)
     for path in images:
-        img = load_image(path)
-        h = img.shape[0]
-        w = img.shape[1]
+        print(path)
+        raw = load_image(path)
+        h = raw.shape[0]
+        w = raw.shape[1]
         f = min(288 * max(h, w) / min(h, w), 608) / min(h, w)
         img = mx.image.imresize(
-            img,
+            raw,
             int(w * f) + (0 if w % 16 == 0 else 16 - w % 16),
             int(h * f) + (0 if h % 16 == 0 else 16 - h % 16)
         )
@@ -24,7 +25,8 @@ def test(images, dims, threshold, context):
         y = model(x.as_in_context(context))
         probs = y[0, :, :, 0]
         affines = y[0, :, :, 2:]
-        labels, plates = plate_reconstruct(img, probs, affines, dims, 16, threshold)
+        labels = plate_labels(img, probs, affines, dims, 16, threshold)
+        plates = reconstruct_plates(raw, labels)
         plt.subplot(2, 1, 1)
         visualize(img, [(pts.reshape((-1)).asnumpy().tolist(), str(prob)) for pts, prob in labels])
         plt.subplot(2, 1, 2)

@@ -45,7 +45,7 @@ def color_normalize(img):
         std = mx.nd.array([0.229, 0.224, 0.225])
     )
 
-def color_reconstruct(img):
+def reconstruct_color(img):
     mean = mx.nd.array([0.485, 0.456, 0.406])
     std = mx.nd.array([0.229, 0.224, 0.225])
     return ((img * std + mean) * 255).astype("uint8")
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     plt.show()
     for i in range(batch_size):
         plt.subplot(batch_size * 2 // 8 + 1, 4, i + 1)
-        visualize(color_reconstruct(images.transpose((0, 2, 3, 1))[i]))
+        visualize(reconstruct_color(images.transpose((0, 2, 3, 1))[i]))
         plt.subplot(batch_size * 2 // 8 + 1, 4, i + batch_size + 1)
         visualize(labels[i, :, :, 0] * 255)
     plt.show()

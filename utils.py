@@ -149,7 +149,7 @@ def iou(tl1, br1, tl2, br2):
     ua = wh1.prod().asscalar() + wh2.prod().asscalar() - ia
     return ia / ua
 
-def plate_reconstruct(image, probs, affines, dims, stride, threshold, out_size=(240, 80)):
+def plate_labels(image, probs, affines, dims, stride, threshold):
     wh = mx.nd.array([[image.shape[1]], [image.shape[0]]], ctx=affines.context)
     scale = ((dims + 40.0) / 2.0) / stride
     unit = mx.nd.array(
@@ -191,11 +191,15 @@ def plate_reconstruct(image, probs, affines, dims, stride, threshold, out_size=(
                 break
         if not overlap:
             labels.append((pts_c, prob_c))
+    return labels
+
+def reconstruct_plates(image, labels, out_size=(240, 80)):
+    wh = np.array([[image.shape[1]], [image.shape[0]]])
     plates = []
     for pts, _ in labels:
-        pts = points_matrix((pts * wh).asnumpy())
+        pts = points_matrix(pts.asnumpy() * wh)
         t_pts = rect_matrix(0, 0, out_size[0], out_size[1])
         m = transform_matrix(pts, t_pts)
         plate = cv2.warpPerspective(image.astype("uint8").asnumpy(), m, out_size)
         plates.append(mx.nd.array(plate))
-    return labels, plates
+    return plates
