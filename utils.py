@@ -137,3 +137,65 @@ def object_label(points, dims, stride):
                 pts = pts / scale
                 label[i, j, 1:] = pts.reshape((-1,))
     return label
+
+def iou(tl1, br1, tl2, br2):
+    wh1 = br1 - tl1
+    wh2 = br2 - tl2
+    assert((wh1 >= 0).sum() > 0 and (wh2 >= 0).sum() > 0)
+    itl = mx.nd.concat(tl1.expand_dims(0), tl2.expand_dims(0), dim=0).max(axis=0)
+    ibr = mx.nd.concat(br1.expand_dims(0), br2.expand_dims(0), dim=0).min(axis=0)
+    iwh = mx.nd.relu(ibr - itl)
+    ia = iwh.prod().asscalar()
+    ua = wh1.prod().asscalar() + wh2.prod().asscalar() - ia
+    return ia / ua
+
+def plate_reconstruct(image, probs, affines, dims, stride, threshold, out_size=(240, 80)):
+    wh = mx.nd.array([[image.shape[1]], [image.shape[0]]], ctx=affines.context)
+    scale = ((dims + 40.0) / 2.0) / stride
+    unit = mx.nd.array(
+        [[-0.5, -0.5, 1], [0.5, -0.5, 1], [0.5, 0.5, 1], [-0.5, 0.5, 1]],
+        ctx=affines.context
+    ).T
+    candidates = []
+    for x, y in [(j, i) for i in range(probs.shape[0]) for j in range(probs.shape[1]) if probs[i, j] > threshold]:
+        affine = mx.nd.concat(
+            mx.nd.concat(
+                mx.nd.relu(affines[y, x, 0]),
+                affines[y, x, 1],
+                affines[y, x, 2],
+                dim=0
+            ).expand_dims(0),
+            mx.nd.concat(
+                affines[y, x, 3],
+                mx.nd.relu(affines[y, x, 4]),
+                affines[y, x, 5],
+                dim=0
+            ).expand_dims(0),
+            dim=0
+        )
+        pts = mx.nd.dot(affine, unit) * scale
+        pts = pts + mx.nd.array([[x + 0.5], [y + 0.5]], ctx=pts.context)
+        pts = pts * stride / wh
+        candidates.append((pts, probs[y, x].asscalar()))
+    candidates.sort(key=lambda x: x[1], reverse=True)
+    labels = []
+    for pts_c, prob_c in candidates:
+        tl_c = pts_c.min(axis=1)
+        br_c = pts_c.max(axis=1)
+        overlap = False
+        for pts_l, _ in labels:
+            tl_l = pts_l.min(axis=1)
+            br_l = pts_l.max(axis=1)
+            if iou(tl_c, br_c, tl_l, br_l) > 0.1:
+                overlap = True
+                break
+        if not overlap:
+            labels.append((pts_c, prob_c))
+    plates = []
+    for pts, _ in labels:
+        pts = points_matrix((pts * wh).asnumpy())
+        t_pts = rect_matrix(0, 0, out_size[0], out_size[1])
+        m = transform_matrix(pts, t_pts)
+        plate = cv2.warpPerspective(image.astype("uint8").asnumpy(), m, out_size)
+        plates.append(mx.nd.array(plate))
+    return labels, plates

@@ -27,14 +27,15 @@ def batches(dataset, batch_size, dims, ctx):
             images, labels = zip(*samples)
             yield mx.nd.concat(*images, dim=0).as_in_context(ctx), mx.nd.concat(*labels, dim=0).as_in_context(ctx)
 
-def visualize(image, points=None, plate=None):
+def visualize(image, labels=None):
     plt.imshow(image.astype("uint8").asnumpy())
-    if not points is None:
-        x = [points[i] * image.shape[1] for i in range(0, len(points) // 2)] + [points[0] * image.shape[1],]
-        y = [points[i] * image.shape[0] for i in range(len(points) // 2, len(points))] + [points[len(points) // 2] * image.shape[0],]
-        plt.plot(x, y, "r")
-        if not plate is None:
-            plt.text(x[0], y[0], plate, bbox=dict(facecolor="green", alpha=0.5), fontdict=dict(color="white"))
+    if not labels is None:
+        for points, tag in labels:
+            x = [points[i] * image.shape[1] for i in range(0, len(points) // 2)] + [points[0] * image.shape[1],]
+            y = [points[i] * image.shape[0] for i in range(len(points) // 2, len(points))] + [points[len(points) // 2] * image.shape[0],]
+            plt.plot(x, y, "r")
+            if not tag is None:
+                plt.text(min(x), min(y) - 10, tag, bbox=dict(facecolor="green", alpha=0.5), fontdict=dict(color="white", size=8))
     plt.axis("off")
 
 def color_normalize(img):
@@ -73,7 +74,7 @@ if __name__ == "__main__":
     image, points = augment_sample(image, points, 208)
     label = object_label(points, 208, 16)
     plt.subplot(1, 2, 1)
-    visualize(image, points, plate)
+    visualize(image, [(points, plate)])
     plt.subplot(1, 2, 2)
     visualize(label[:, :, 0])
     plt.show()
