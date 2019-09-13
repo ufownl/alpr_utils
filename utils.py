@@ -102,11 +102,18 @@ def augment_sample(image, points, dims):
     # apply projection
     trans = np.matmul(rotate, crop)
     image, points = project(image, points, np.matmul(rotate, crop), dims)
+    # scale the coordinates of points to [0, 1]
+    points = points / dims
+    # random flip
+    if random.random() < 0.5:
+        image = cv2.flip(image, 1)
+        points[0] = 1 - points[0]
+        points = points[..., [1, 0, 3, 2]]
     # color augment
     hsv_mod = (np.random.rand(3).astype(np.float32) - 0.5) * 0.3
     hsv_mod[0] *= 360
     image = hsv_transform(image, hsv_mod)
-    return mx.nd.array(image), np.asarray(points / dims).reshape((-1,)).tolist()
+    return mx.nd.array(image), np.asarray(points).reshape((-1,)).tolist()
 
 def point_in_polygon(x, y, pts):
     n = len(pts) // 2
