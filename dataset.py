@@ -7,8 +7,8 @@ from utils import augment_sample, object_label
 
 
 def load_dataset(path):
-    with open(os.path.join(path, "data.json")) as f:
-        return [(os.path.join(path, "images", data["image"]), data["points"], data["plate"]) for data in json.loads(f.read())]
+    with open(os.path.join(path, "dataset.json")) as f:
+        return [(os.path.join(path, data["image"]), data["points"], data["plate"]) for data in json.loads(f.read())]
 
 def load_image(path):
     with open(path, "rb") as f:
