@@ -84,7 +84,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Start a transformer_coupletbot trainer.")
     parser.add_argument("--max_epochs", help="set the max epochs (default: 100)", type=int, default=100)
     parser.add_argument("--learning_rate", help="set the learning rate (default: 0.001)", type=float, default=0.001)
-    parser.add_argument("--batch_size", help="set the batch size (default: 128)", type=int, default=128)
+    parser.add_argument("--batch_size", help="set the batch size (default: 32)", type=int, default=32)
     parser.add_argument("--dims", help="set the sample dimentions (default: 208)", type=int, default=208)
     parser.add_argument("--sgd", help="using sgd optimizer", action="store_true")
     parser.add_argument("--device_id", help="select device that the model using (default: 0)", type=int, default=0)
