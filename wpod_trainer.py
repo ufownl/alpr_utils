@@ -30,8 +30,8 @@ def train(max_epochs, learning_rate, batch_size, dims, sgd, context):
             "momentum": 0.5
         })
     else:
-        print("Optimizer: Adam")
-        trainer = mx.gluon.Trainer(model.collect_params(), "Adam", {
+        print("Optimizer: Nadam")
+        trainer = mx.gluon.Trainer(model.collect_params(), "Nadam", {
             "learning_rate": learning_rate
         })
     if os.path.isfile("model/wpod_net.state"):
