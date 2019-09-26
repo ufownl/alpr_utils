@@ -13,8 +13,8 @@ def train(max_epochs, learning_rate, batch_size, dims, sgd, context):
     split = int(len(dataset) * 0.9)
     training_set = dataset[:split]
     print("Training set: ", len(training_set))
-    validating_set = dataset[split:]
-    print("Validating set: ", len(validating_set))
+    validation_set = dataset[split:]
+    print("Validation set: ", len(validation_set))
 
     model = WpodNet()
     if os.path.isfile("model/wpod_net.params"):
@@ -60,20 +60,20 @@ def train(max_epochs, learning_rate, batch_size, dims, sgd, context):
             ), flush=True)
         training_avg_L = training_total_L / training_batches
 
-        validating_total_L = 0.0
-        validating_batches = 0
-        for x, label in batches(validating_set, batch_size, dims, context):
-            validating_batches += 1
+        validation_total_L = 0.0
+        validation_batches = 0
+        for x, label in batches(validation_set, batch_size, dims, context):
+            validation_batches += 1
             y = model(x)
             L = wpod_loss(y, label)
-            validating_batch_L = mx.nd.mean(L).asscalar()
-            if validating_batch_L != validating_batch_L:
+            validation_batch_L = mx.nd.mean(L).asscalar()
+            if validation_batch_L != validation_batch_L:
                 raise ValueError()
-            validating_total_L += validating_batch_L
-        validating_avg_L = validating_total_L / validating_batches
+            validation_total_L += validation_batch_L
+        validation_avg_L = validation_total_L / validation_batches
 
-        print("[Epoch %d]  training_loss %.10f  validating_loss %.10f  duration %.2fs" % (
-            epoch + 1, training_avg_L, validating_avg_L, time.time() - ts
+        print("[Epoch %d]  training_loss %.10f  validation_loss %.10f  duration %.2fs" % (
+            epoch + 1, training_avg_L, validation_avg_L, time.time() - ts
         ), flush=True)
 
         model.save_parameters("model/wpod_net.params")
