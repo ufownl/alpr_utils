@@ -66,9 +66,6 @@ if __name__ == "__main__":
     dataset = load_dataset("data/train")
     print("dataset size: ", len(dataset))
     print("dataset preview: ", dataset[:10])
-    batch_size = 4
-    images, labels = next(batches(dataset, batch_size, 208, mx.cpu()))
-    print("batches preview: ", images, labels)
     path, points, plate = dataset[0]
     image = load_image(path)
     image, points = augment_sample(image, points, 208)
@@ -78,9 +75,11 @@ if __name__ == "__main__":
     plt.subplot(1, 2, 2)
     visualize(label[:, :, 0])
     plt.show()
-    for i in range(batch_size):
-        plt.subplot(batch_size * 2 // 8 + 1, 4, i + 1)
-        visualize(reconstruct_color(images.transpose((0, 2, 3, 1))[i]))
-        plt.subplot(batch_size * 2 // 8 + 1, 4, i + batch_size + 1)
-        visualize(labels[i, :, :, 0] * 255)
-    plt.show()
+    for images, labels in batches(dataset, 4, 208, mx.cpu()):
+        print("batches preview: ", images, labels)
+        for i in range(images.shape[0]):
+            plt.subplot(2, images.shape[0], i + 1)
+            visualize(reconstruct_color(images.transpose((0, 2, 3, 1))[i]))
+            plt.subplot(2, images.shape[0], i + images.shape[0] + 1)
+            visualize(labels[i, :, :, 0] * 255)
+        plt.show()
