@@ -1,8 +1,9 @@
 import os
-import multiprocessing
 import json
 import mxnet as mx
 import matplotlib.pyplot as plt
+from multiprocessing import cpu_count
+from multiprocessing.dummy import Pool
 from utils import augment_sample, object_label
 
 
@@ -20,7 +21,7 @@ def batches(dataset, batch_size, dims, ctx):
     if batches * batch_size < len(dataset):
         batches += 1
     sampler = Sampler(dims)
-    with multiprocessing.Pool(multiprocessing.cpu_count() * 2) as p:
+    with Pool(cpu_count() * 2) as p:
         for i in range(batches):
             start = i * batch_size
             samples = p.map(sampler, dataset[start: start + batch_size])
