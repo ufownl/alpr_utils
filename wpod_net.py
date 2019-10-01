@@ -7,15 +7,16 @@ class ResBlock(mx.gluon.nn.Block):
         self._block = mx.gluon.nn.Sequential()
         with self.name_scope():
             self._block.add(
-                mx.gluon.nn.Conv2D(channels, 3, 1, 1),
                 mx.gluon.nn.BatchNorm(1, 0.99, 0.001),
                 mx.gluon.nn.Activation("relu"),
                 mx.gluon.nn.Conv2D(channels, 3, 1, 1),
                 mx.gluon.nn.BatchNorm(1, 0.99, 0.001),
+                mx.gluon.nn.Activation("relu"),
+                mx.gluon.nn.Conv2D(channels, 3, 1, 1),
             )
 
     def forward(self, x):
-        return mx.nd.relu(self._block(x) + x)
+        return self._block(x) + x
 
 
 class Detection(mx.gluon.nn.Block):
@@ -47,24 +48,24 @@ class WpodNet(mx.gluon.nn.Block):
                 mx.gluon.nn.Activation("relu"),
                 mx.gluon.nn.MaxPool2D(2),
                 mx.gluon.nn.Conv2D(32, 3, 1, 1),
+                ResBlock(32),
                 mx.gluon.nn.BatchNorm(1, 0.99, 0.001),
                 mx.gluon.nn.Activation("relu"),
-                ResBlock(32),
                 mx.gluon.nn.MaxPool2D(2),
                 mx.gluon.nn.Conv2D(64, 3, 1, 1),
-                mx.gluon.nn.BatchNorm(1, 0.99, 0.001),
-                mx.gluon.nn.Activation("relu"),
                 ResBlock(64),
                 ResBlock(64),
                 mx.gluon.nn.MaxPool2D(2),
                 ResBlock(64),
                 ResBlock(64),
+                mx.gluon.nn.BatchNorm(1, 0.99, 0.001),
+                mx.gluon.nn.Activation("relu"),
                 mx.gluon.nn.MaxPool2D(2),
                 mx.gluon.nn.Conv2D(128, 3, 1, 1),
+                ResBlock(128),
+                ResBlock(128),
                 mx.gluon.nn.BatchNorm(1, 0.99, 0.001),
                 mx.gluon.nn.Activation("relu"),
-                ResBlock(128),
-                ResBlock(128),
                 Detection()
             )
 
