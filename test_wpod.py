@@ -1,40 +1,64 @@
+import math
 import argparse
 import mxnet as mx
 import matplotlib.pyplot as plt
+from gluoncv import model_zoo, data
 from dataset import load_image, visualize, color_normalize
 from utils import plate_labels, reconstruct_plates
 from wpod_net import WpodNet
 
 
+def fixed_crop(raw, bbox):
+    x0 = max(int(bbox[0].asscalar()), 0)
+    x0 = min(int(x0), raw.shape[1])
+    y0 = max(int(bbox[1].asscalar()), 0)
+    y0 = min(int(y0), raw.shape[0])
+    x1 = max(int(bbox[2].asscalar()), 0)
+    x1 = min(int(x1), raw.shape[1])
+    y1 = max(int(bbox[3].asscalar()), 0)
+    y1 = min(int(y1), raw.shape[0])
+    return mx.image.fixed_crop(raw, x0, y0, x1 - x0, y1 - y0)
+
+
 def test(images, dims, threshold, context):
     print("Loading model...")
+    yolo = model_zoo.get_model('yolo3_darknet53_voc', pretrained=True, ctx=context)
     model = WpodNet()
     model.load_parameters("model/wpod_net.params", ctx=context)
     for path in images:
         print(path)
-        raw = load_image(path)
-        h = raw.shape[0]
-        w = raw.shape[1]
-        f = min(288 * max(h, w) / min(h, w), 608) / min(h, w)
-        img = mx.image.imresize(
-            raw,
-            int(w * f) + (0 if w % 16 == 0 else 16 - w % 16),
-            int(h * f) + (0 if h % 16 == 0 else 16 - h % 16)
-        )
-        x = color_normalize(img).transpose((2, 0, 1)).expand_dims(0)
-        y = model(x.as_in_context(context))
-        probs = y[0, :, :, 0]
-        affines = y[0, :, :, 2:]
-        labels = plate_labels(img, probs, affines, dims, 16, threshold)
-        plates = reconstruct_plates(raw, labels)
-        plt.subplot(len(plates) + 2, 1, 1)
-        visualize(img, [(pts.reshape((-1)).asnumpy().tolist(), str(prob)) for pts, prob in labels])
-        plt.subplot(len(plates) + 2, 1, 2)
-        visualize(probs > threshold)
-        for i, plate in enumerate(plates):
-            plt.subplot(len(plates) + 2, 1, i + 3)
-            visualize(plate)
-        plt.show()
+        x, raw = data.transforms.presets.yolo.load_test(path, short=512)
+        classes, scores, bboxes = yolo(x)
+        automobiles = [
+            fixed_crop(mx.nd.array(raw), bboxes[0, i])
+            for i in range(classes.shape[1])
+                if (yolo.classes[int(classes[0, i].asscalar())] == 'car' or
+                    yolo.classes[int(classes[0, i].asscalar())] == 'bus') and
+                    scores[0, i].asscalar() > 0.5
+        ]
+        for raw in automobiles:
+            h = raw.shape[0]
+            w = raw.shape[1]
+            f = min(288 * max(h, w) / min(h, w), 608) / min(h, w)
+            img = mx.image.imresize(
+                raw,
+                int(w * f) + (0 if w % 16 == 0 else 16 - w % 16),
+                int(h * f) + (0 if h % 16 == 0 else 16 - h % 16)
+            )
+            x = color_normalize(img).transpose((2, 0, 1)).expand_dims(0)
+            y = model(x.as_in_context(context))
+            probs = y[0, :, :, 0]
+            affines = y[0, :, :, 2:]
+            labels = plate_labels(img, probs, affines, dims, 16, threshold)
+            plates = reconstruct_plates(raw, labels)
+            plt.subplot(math.ceil((len(plates) + 2) / 2), 2, 1)
+            visualize(img, [(pts.reshape((-1)).asnumpy().tolist(), str(prob)) for pts, prob in labels])
+            plt.subplot(math.ceil((len(plates) + 2) / 2), 2, 2)
+            visualize(probs > threshold)
+            for i, plate in enumerate(plates):
+                plt.subplot(math.ceil((len(plates) + 2) / 2), 2, i + 3)
+                visualize(plate)
+            plt.show()
 
 
 if __name__ == "__main__":
