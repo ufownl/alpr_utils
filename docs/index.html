@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>alpr_utils</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+      table, th, td {
+        border: 1px solid black;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <p>
+        server: <input v-model="server" type="text" />
+      </p>
+      <p>
+        <input type="file" accept="image/*" @change="chooseImage" :disabled="processing" />
+        <button @click="wpod" :disabled="processing">WPOD</button>
+      </p>
+      <div>{{ message }}</div>
+      <p v-for="res in results">
+        <img :src="'data:image/png;base64, ' + res.automobile" alt="automobile" />
+        <plate-table :plates="res.plates" />
+      </p>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.10"></script>
+    <script type="text/javascript">
+      Vue.component("plate-table", {
+        props: {
+          plates: {
+            type: Array,
+            default: []
+          }
+        },
+        template: '\
+          <table>\
+            <tr>\
+              <th>plate</th>\
+              <th>score</th>\
+            </tr>\
+            <tr v-for="plt in plates">\
+              <td><img :src="\'data:image/png;base64, \' + plt.plate" alt="plate" /></td>\
+              <td>{{ plt.score }}</td>\
+            </tr>\
+          </table>\
+        '
+      })
+    </script>
+    <script type="text/javascript">
+      function get_param(name) {
+        let reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)')
+        let r = window.location.search.substr(1).match(reg)
+        if (r != null) {
+          return unescape(r[2])
+        }
+        return null
+      }
+
+      let server = get_param('server')
+      new Vue({
+        el: '#app',
+        data: {
+          server: server ? server : 'http://localhost',
+          image: undefined,
+          message: '',
+          processing: false,
+          results: []
+        },
+        methods: {
+          chooseImage(e) {
+            this.image = e.target.files[0]
+          },
+          wpod() {
+            if (!this.image) {
+              this.message = 'Please select an image file!'
+              return
+            }
+            this.message = 'Uploading and processing...'
+            this.processing = true
+            let form = new FormData()
+            form.append('image', this.image)
+            let url = encodeURI(this.server + '/alpr_utils/wpod')
+            let xhr = new XMLHttpRequest()
+            xhr.open('POST', url, true)
+            xhr.onload = () => {
+              if (xhr.readyState !== 4) {
+                return
+              }
+              this.processing = false
+              if (xhr.status !== 200) {
+                this.message = 'ERROR: HTTP status code (' + xhr.status + ')'
+                return
+              }
+              let resp = JSON.parse(xhr.response)
+              if (!resp.length) {
+                this.message = 'ERROR: Invalid response'
+                return
+              }
+              this.message = ''
+              this.results = resp[0]
+            }
+            xhr.onerror = () => {
+              this.message = 'ERROR: Failed to call "' + url + '"'
+              this.processing = false
+            }
+            xhr.send(form)
+          }
+        }
+      })
+    </script>
+  </body>
+</html>
