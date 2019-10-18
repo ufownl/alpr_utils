@@ -35,7 +35,10 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
             self.send_response(http.HTTPStatus.OK)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.end_headers()
-            self.wfile.write(json.dumps([self._call_wpod(mx.image.imdecode(c)) for c in contents]).encode())
+            self.wfile.write(json.dumps([
+                self._call_wpod(mx.image.imdecode(c).as_in_context(self.context))
+                for c in contents
+            ]).encode())
         else:
             self.send_error(http.HTTPStatus.NOT_FOUND)
 

@@ -58,7 +58,7 @@ def test(images, dims, threshold, no_yolo, context):
             detect_plate(model, raw, dims, threshold, context)
         else:
             x, raw = data.transforms.presets.yolo.load_test(path, short=512)
-            classes, scores, bboxes = yolo(x)
+            classes, scores, bboxes = yolo(x.as_in_context(context))
             automobiles = [
                 fixed_crop(mx.nd.array(raw), bboxes[0, i])
                 for i in range(classes.shape[1])
