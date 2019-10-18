@@ -110,6 +110,9 @@ venv.bak/
 *.out
 *.bak
 
+# vim swap
+*.swp
+
 # dataset files
 data/
 

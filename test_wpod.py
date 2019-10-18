@@ -71,7 +71,7 @@ def test(images, dims, threshold, no_yolo, context):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Start a cycle_gan tester.")
+    parser = argparse.ArgumentParser(description="Start a WPOD tester.")
     parser.add_argument("images", metavar="IMG", help="path of the image file[s]", type=str, nargs="+")
     parser.add_argument("--dims", help="set the sample dimentions (default: 208)", type=int, default=208)
     parser.add_argument("--threshold", help="set the positive threshold (default: 0.9)", type=float, default=0.9)
