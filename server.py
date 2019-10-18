@@ -91,7 +91,7 @@ def config_handler(context, dims, threshold, wpod, yolo=None):
 def png_encode(img):
     height = img.shape[0]
     width = img.shape[1]
-    img = img.reshape((-1, width * 3))
+    img = img.astype("uint8").reshape((-1, width * 3))
     f = io.BytesIO()
     w = png.Writer(width, height, greyscale=False)
     w.write(f, img.asnumpy())
