@@ -130,7 +130,7 @@ def _main():
     wpod = WpodNet()
     wpod.load_parameters("model/wpod_net.params", ctx=context)
     if args.no_yolo:
-        handler = config_handler(args.dims, args.threshold, wpod)
+        handler = config_handler(context, args.dims, args.threshold, wpod)
     else:
         yolo = model_zoo.get_model('yolo3_darknet53_voc', pretrained=True, ctx=context)
         handler = config_handler(context, args.dims, args.threshold, wpod, yolo)
