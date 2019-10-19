@@ -200,10 +200,10 @@ def plate_labels(image, probs, affines, dims, stride, threshold):
             labels.append((pts_c, prob_c))
     return labels
 
-def reconstruct_plates(image, labels, out_size=(240, 80)):
+def reconstruct_plates(image, plate_pts, out_size=(240, 80)):
     wh = np.array([[image.shape[1]], [image.shape[0]]])
     plates = []
-    for pts, _ in labels:
+    for pts in plate_pts:
         pts = points_matrix(pts.asnumpy() * wh)
         t_pts = rect_matrix(0, 0, out_size[0], out_size[1])
         m = transform_matrix(pts, t_pts)

@@ -78,7 +78,7 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
         probs = y[0, :, :, 0]
         affines = y[0, :, :, 2:]
         labels = plate_labels(img, probs, affines, self.dims, 16, self.threshold)
-        plates = reconstruct_plates(raw, labels)
+        plates = reconstruct_plates(raw, [pts for pts, _ in labels])
         return [dict(plate=png_encode(plates[i]), score=labels[i][1].item()) for i in range(len(labels))]
 
 

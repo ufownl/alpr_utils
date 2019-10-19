@@ -34,7 +34,7 @@ def detect_plate(model, raw, dims, threshold, context):
     probs = y[0, :, :, 0]
     affines = y[0, :, :, 2:]
     labels = plate_labels(img, probs, affines, dims, 16, threshold)
-    plates = reconstruct_plates(raw, labels)
+    plates = reconstruct_plates(raw, [pts for pts, _ in labels])
     plt.subplot(math.ceil((len(plates) + 2) / 2), 2, 1)
     visualize(img, [(pts.reshape((-1)).asnumpy().tolist(), str(prob)) for pts, prob in labels])
     plt.subplot(math.ceil((len(plates) + 2) / 2), 2, 2)
