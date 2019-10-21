@@ -50,8 +50,7 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
 
     def _call_wpod(self, raw):
         if self.yolo:
-            raw = mx.image.resize_short(raw, 512)
-            x = color_normalize(raw).transpose((2, 0, 1)).expand_dims(0)
+            x, raw = data.transforms.presets.yolo.transform_test(raw, short=512)
             classes, scores, bboxes = self.yolo(x)
             automobiles = [
                 fixed_crop(mx.nd.array(raw), bboxes[0, i])
