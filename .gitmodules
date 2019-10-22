@@ -1,0 +1,3 @@
+[submodule "fake/chinese"]
+	path = fake/chinese
+	url = https://github.com/ufownl/fake_chs_lp.git
