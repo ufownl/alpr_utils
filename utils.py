@@ -73,12 +73,12 @@ def project(img, pts, trans, dims):
     t_pts = t_pts / t_pts[2]
     return t_img, t_pts[:2]
 
-def hsv_transform(img, hsv_mod):
-    img = img.astype(np.float32) / 255
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    img = img + hsv_mod
-    img = cv2.cvtColor(img, cv2.COLOR_HSV2RGB)
-    return (np.clip(img, 0.0, 1.0) * 255).astype(np.uint8)
+def hsv_noise(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    hsv[:, :, 0] = hsv[:, :, 0] * (0.8 + random.uniform(0.0, 0.2))
+    hsv[:, :, 1] = hsv[:, :, 1] * (0.3 + random.uniform(0.0, 0.7))
+    hsv[:, :, 2] = hsv[:, :, 2] * (0.2 + random.uniform(0.0, 0.8))
+    return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
 def augment_sample(image, points, dims):
     image = image.astype("uint8").asnumpy()
@@ -111,9 +111,7 @@ def augment_sample(image, points, dims):
         points[0] = 1 - points[0]
         points = points[..., [1, 0, 3, 2]]
     # color augment
-    hsv_mod = (np.random.rand(3).astype(np.float32) - 0.5) * 0.3
-    hsv_mod[0] *= 360
-    image = hsv_transform(image, hsv_mod)
+    image = hsv_noise(image)
     return mx.nd.array(image), np.asarray(points).reshape((-1,)).tolist()
 
 def point_in_polygon(x, y, pts):
@@ -230,9 +228,7 @@ def fake_plate(smudge=None):
     plate, label = draw()
     if smudge:
         plate = smudge(plate)
-    hsv_mod = (np.random.rand(3).astype(np.float32) - 0.5) * 0.3
-    hsv_mod[0] *= 360
-    plate = hsv_transform(plate, hsv_mod)
+    plate = hsv_noise(plate)
     plate = gauss_blur(plate, random.randint(1, 5))
     plate = gauss_noise(plate)
     return plate, label
