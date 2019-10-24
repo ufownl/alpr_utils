@@ -1,10 +1,11 @@
 import os
 import json
+import random
 import mxnet as mx
 import matplotlib.pyplot as plt
 from multiprocessing import cpu_count
 from multiprocessing.dummy import Pool
-from utils import augment_sample, object_label
+from utils import Smudginess, fake_plate, apply_fake_plate, augment_sample, object_label
 
 
 def load_dataset(path):
@@ -16,11 +17,11 @@ def load_image(path):
         buf = f.read()
     return mx.image.imdecode(buf)
 
-def batches(dataset, batch_size, dims, ctx):
+def batches(dataset, batch_size, dims, fake, ctx):
     batches = len(dataset) // batch_size
     if batches * batch_size < len(dataset):
         batches += 1
-    sampler = Sampler(dims)
+    sampler = Sampler(dims, fake)
     with Pool(cpu_count() * 2) as p:
         for i in range(batches):
             start = i * batch_size
@@ -53,11 +54,18 @@ def reconstruct_color(img):
 
 
 class Sampler:
-    def __init__(self, dims):
+    def __init__(self, dims, fake):
         self._dims = dims
+        self._fake = fake
+        if fake > 0:
+            self._smudge = Smudginess()
 
     def __call__(self, data):
-        img, pts = augment_sample(load_image(data[0]), data[1], self._dims)
+        img = load_image(data[0])
+        if self._fake > 0 and random.random() < self._fake:
+            fplt, flbl = fake_plate(self._smudge)
+            img = apply_fake_plate(img, data[1], fplt)
+        img, pts = augment_sample(img, data[1], self._dims)
         img = color_normalize(img)
         lbl = object_label(pts, self._dims, 16)
         return img.transpose((2, 0, 1)).expand_dims(0), lbl.expand_dims(0)
@@ -76,7 +84,7 @@ if __name__ == "__main__":
     plt.subplot(1, 2, 2)
     visualize(label[:, :, 0])
     plt.show()
-    for images, labels in batches(dataset, 4, 208, mx.cpu()):
+    for images, labels in batches(dataset, 4, 208, 0.5, mx.cpu()):
         print("batches preview: ", images, labels)
         for i in range(images.shape[0]):
             plt.subplot(2, images.shape[0], i + 1)

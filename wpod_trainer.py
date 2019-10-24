@@ -7,7 +7,7 @@ from dataset import load_dataset, batches
 from wpod_net import WpodNet, wpod_loss
 
 
-def train(max_epochs, learning_rate, batch_size, dims, sgd, context):
+def train(max_epochs, learning_rate, batch_size, dims, fake, sgd, context):
     print("Loading dataset...", flush=True)
     dataset = load_dataset("data/train")
     split = int(len(dataset) * 0.9)
@@ -44,7 +44,7 @@ def train(max_epochs, learning_rate, batch_size, dims, sgd, context):
         random.shuffle(training_set)
         training_total_L = 0.0
         training_batches = 0
-        for x, label in batches(training_set, batch_size, dims, context):
+        for x, label in batches(training_set, batch_size, dims, fake, context):
             training_batches += 1
             with mx.autograd.record():
                 y = model(x)
@@ -62,7 +62,7 @@ def train(max_epochs, learning_rate, batch_size, dims, sgd, context):
 
         validation_total_L = 0.0
         validation_batches = 0
-        for x, label in batches(validation_set, batch_size, dims, context):
+        for x, label in batches(validation_set, batch_size, dims, fake, context):
             validation_batches += 1
             y = model(x)
             L = wpod_loss(y, label)
@@ -86,6 +86,7 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", help="set the learning rate (default: 0.001)", type=float, default=0.001)
     parser.add_argument("--batch_size", help="set the batch size (default: 32)", type=int, default=32)
     parser.add_argument("--dims", help="set the sample dimentions (default: 208)", type=int, default=208)
+    parser.add_argument("--fake", help="set the probability of using a fake plate (default: 0.0)", type=float, default=0.0)
     parser.add_argument("--sgd", help="using sgd optimizer", action="store_true")
     parser.add_argument("--device_id", help="select device that the model using (default: 0)", type=int, default=0)
     parser.add_argument("--gpu", help="using gpu acceleration", action="store_true")
@@ -96,4 +97,4 @@ if __name__ == "__main__":
     else:
         context = mx.cpu(args.device_id)
 
-    train(args.max_epochs, args.learning_rate, args.batch_size, args.dims, args.sgd, context)
+    train(args.max_epochs, args.learning_rate, args.batch_size, args.dims, args.fake, args.sgd, context)
