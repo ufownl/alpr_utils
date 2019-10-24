@@ -210,3 +210,14 @@ def reconstruct_plates(image, plate_pts, out_size=(240, 80)):
         plate = cv2.warpPerspective(image.astype("uint8").asnumpy(), m, out_size)
         plates.append(mx.nd.array(plate))
     return plates
+
+
+class Smudginess:
+    def __init__(self, smu="res/smu.png"):
+        self._smu = cv2.imread(smu)
+
+    def __call__(self, raw):
+        y = random.randint(0, self._smu.shape[0] - raw.shape[0])
+        x = random.randint(0, self._smu.shape[1] - raw.shape[1])
+        texture = self._smu[y:y+raw.shape[0], x:x+raw.shape[1]]
+        return cv2.bitwise_not(cv2.bitwise_and(cv2.bitwise_not(raw), texture))
