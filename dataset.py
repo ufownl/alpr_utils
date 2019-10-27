@@ -62,7 +62,7 @@ class Sampler:
 
     def __call__(self, data):
         img = load_image(data[0])
-        if self._fake > 0 and random.random() < self._fake:
+        if random.random() < self._fake:
             fplt, flbl = fake_plate(self._smudge)
             img = apply_fake_plate(img, data[1], fplt)
         img, pts = augment_sample(img, data[1], self._dims)
