@@ -3,7 +3,7 @@ import time
 import random
 import argparse
 import mxnet as mx
-from dataset import load_dataset, batches
+from dataset import load_dataset, wpod_batches
 from wpod_net import WpodNet, WpodLoss
 
 
@@ -45,7 +45,7 @@ def train(max_epochs, learning_rate, batch_size, dims, fake, sgd, context):
         random.shuffle(training_set)
         training_total_L = 0.0
         training_batches = 0
-        for x, label in batches(training_set, batch_size, dims, fake, context):
+        for x, label in wpod_batches(training_set, batch_size, dims, fake, context):
             training_batches += 1
             with mx.autograd.record():
                 y = model(x)
@@ -63,7 +63,7 @@ def train(max_epochs, learning_rate, batch_size, dims, fake, sgd, context):
 
         validation_total_L = 0.0
         validation_batches = 0
-        for x, label in batches(validation_set, batch_size, dims, fake, context):
+        for x, label in wpod_batches(validation_set, batch_size, dims, fake, context):
             validation_batches += 1
             y = model(x)
             L = loss(y, label)

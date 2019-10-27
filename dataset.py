@@ -17,11 +17,11 @@ def load_image(path):
         buf = f.read()
     return mx.image.imdecode(buf)
 
-def batches(dataset, batch_size, dims, fake, ctx):
+def wpod_batches(dataset, batch_size, dims, fake, ctx):
     batches = len(dataset) // batch_size
     if batches * batch_size < len(dataset):
         batches += 1
-    sampler = Sampler(dims, fake)
+    sampler = WpodSampler(dims, fake)
     with Pool(cpu_count() * 2) as p:
         for i in range(batches):
             start = i * batch_size
@@ -53,7 +53,7 @@ def reconstruct_color(img):
     return ((img * std + mean) * 255).astype("uint8")
 
 
-class Sampler:
+class WpodSampler:
     def __init__(self, dims, fake):
         self._dims = dims
         self._fake = fake
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     plt.subplot(1, 2, 2)
     visualize(label[:, :, 0])
     plt.show()
-    for images, labels in batches(dataset, 4, 208, 0.5, mx.cpu()):
+    for images, labels in wpod_batches(dataset, 4, 208, 0.5, mx.cpu()):
         print("batches preview: ", images, labels)
         for i in range(images.shape[0]):
             plt.subplot(2, images.shape[0], i + 1)
