@@ -80,7 +80,7 @@ def hsv_noise(img):
     hsv[:, :, 2] = hsv[:, :, 2] * (0.2 + random.uniform(0.0, 0.8))
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
-def augment_sample(image, points, dims):
+def augment_sample(image, points, dims, flip_prob=0.5):
     image = image.astype("uint8").asnumpy()
     points = np.array(points).reshape((2, 4))
     points = points * np.array([[image.shape[1]], [image.shape[0]]])
@@ -106,7 +106,7 @@ def augment_sample(image, points, dims):
     # scale the coordinates of points to [0, 1]
     points = points / dims
     # random flip
-    if random.random() < 0.5:
+    if random.random() < flip_prob:
         image = cv2.flip(image, 1)
         points[0] = 1 - points[0]
         points = points[..., [1, 0, 3, 2]]
