@@ -81,7 +81,7 @@ def train(max_epochs, learning_rate, batch_size, dims, fake, sgd, context):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Start a transformer_coupletbot trainer.")
+    parser = argparse.ArgumentParser(description="Start a WPOD network trainer.")
     parser.add_argument("--max_epochs", help="set the max epochs (default: 100)", type=int, default=100)
     parser.add_argument("--learning_rate", help="set the learning rate (default: 0.001)", type=float, default=0.001)
     parser.add_argument("--batch_size", help="set the batch size (default: 32)", type=int, default=32)
