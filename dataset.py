@@ -144,6 +144,7 @@ if __name__ == "__main__":
             break
     vocab = Vocabulary()
     vocab.load("data/train/vocabulary.json")
+    print("vocab size: ", vocab.size())
     for batches, (imgs, tgt, tgt_len, lbl) in enumerate(ocr_batches(dataset, 4, 208, (128, 384), 0.5, vocab, 8, mx.cpu())):
         print("batch preview: ", imgs, tgt, tgt_len, lbl)
         for i in range(imgs.shape[0]):
