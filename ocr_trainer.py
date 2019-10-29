@@ -12,7 +12,11 @@ def train(max_epochs, learning_rate, batch_size, max_hw, max_len, dims, fake, sg
     print("Loading dataset...", flush=True)
     dataset = load_dataset("data/train")
     vocab = Vocabulary()
-    vocab.load("data/train/vocabulary.json")
+    if os.path.isfile("model/vocabulary.json"):
+        vocab.load("model/vocabulary.json")
+    else:
+        vocab.load("data/train/vocabulary.json")
+        vocab.save("model/vocabulary.json")
     print("Vocabulary size: ", vocab.size())
     split = int(len(dataset) * 0.9)
     training_set = dataset[:split]
