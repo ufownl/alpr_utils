@@ -232,10 +232,11 @@ def fake_plate(smudge=None):
     plate = hsv_noise(plate)
     plate = gauss_blur(plate, random.randint(1, 5))
     plate = gauss_noise(plate)
-    return plate, label
+    return mx.nd.array(plate), label
 
 def apply_fake_plate(image, points, plate):
     image = image.astype("uint8").asnumpy()
+    plate = plate.astype("uint8").asnumpy()
     points = np.array(points).reshape((2, 4))
     points = points * np.array([[image.shape[1]], [image.shape[0]]])
     pts = rect_matrix(0, 0, plate.shape[1], plate.shape[0])
