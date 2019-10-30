@@ -23,7 +23,7 @@ def fixed_crop(raw, bbox):
 
 def recognize_plate(vocab, ocr, plate, beam_size, context):
     x = color_normalize(plate).transpose((2, 0, 1)).expand_dims(0)
-    enc_y, enc_self_attn = ocr.encode(x)
+    enc_y, enc_self_attn = ocr.encode(x.as_in_context(context))
     sequences = [([vocab.char2idx("<GO>")], 0.0)]
     while True:
         candidates = []
