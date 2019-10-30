@@ -46,6 +46,8 @@ def train(max_epochs, epoch_size, learning_rate, batch_size, max_hw, max_len, sg
 
         training_total_L = 0.0
         training_batches = 0
+        num_correct = 0
+        num_inst = 0
         for x, tgt, tgt_len, lbl in ocr_batches(epoch_size, batch_size, max_hw, vocab, max_len, context):
             training_batches += 1
             with mx.autograd.record():
@@ -57,13 +59,18 @@ def train(max_epochs, epoch_size, learning_rate, batch_size, max_hw, max_len, sg
             if training_batch_L != training_batch_L:
                 raise ValueError()
             training_total_L += training_batch_L
-            print("[Epoch %d  Batch %d]  batch_loss %.10f  average_loss %.10f  elapsed %.2fs" % (
-                epoch, training_batches, training_batch_L, training_total_L / training_batches, time.time() - ts
+            pred_lbl = mx.nd.argmax(y, axis=-1)
+            batch_num_correct = (pred_lbl == lbl).sum().asscalar()
+            batch_num_inst = len(pred_lbl.reshape((-1))) - (lbl == vocab.char2idx("<PAD>")).sum().asscalar()
+            print("[Epoch %d  Batch %d]  batch_loss %.10f  average_loss %.10f  accuracy %.10f  elapsed %.2fs" % (
+                epoch, training_batches, training_batch_L, training_total_L / training_batches, batch_num_correct / batch_num_inst, time.time() - ts
             ), flush=True)
+            num_correct += batch_num_correct
+            num_inst += batch_num_inst
         training_avg_L = training_total_L / training_batches
 
-        print("[Epoch %d]  training_loss %.10f  validation_loss 0.0  duration %.2fs" % (
-            epoch + 1, training_avg_L, time.time() - ts
+        print("[Epoch %d]  training_loss %.10f  validation_loss 0.0  accuracy %.10f  duration %.2fs" % (
+            epoch + 1, training_avg_L, num_correct / num_inst, time.time() - ts
         ), flush=True)
 
         model.save_parameters("model/ocr_net.params")
