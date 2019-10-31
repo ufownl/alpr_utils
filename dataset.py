@@ -104,7 +104,9 @@ class OcrSampler:
             [0.0, 0.0, 1.0, 1.0]
         ])
         pts = pts + mx.nd.random.uniform(-0.1, 0.1, pts.shape)
-        plt = reconstruct_plates(img, [pts], (self._out_hw[1], self._out_hw[0]))[0]
+        scale = random.uniform(0.125, 1.0)
+        plt = reconstruct_plates(img, [pts], (int(self._out_hw[1] * scale), int(self._out_hw[0] * scale)))[0]
+        plt = mx.image.imresize(plt, self._out_hw[1], self._out_hw[0])
         plt = color_normalize(plt)
         return plt.transpose((2, 0, 1)).expand_dims(0), [self._vocab.char2idx(ch) for ch in lbl], len(lbl)
 
