@@ -81,6 +81,9 @@ def hsv_noise(img):
     hsv[:, :, 2] = hsv[:, :, 2] * (0.2 + random.uniform(0.0, 0.8))
     return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
 
+def brightness_noise(img, ratio=0.8):
+    return np.clip(img * (1.0 + random.uniform(-ratio, ratio)), 0, 255)
+
 def augment_sample(image, points, dims, flip_prob=0.5):
     image = image.astype("uint8").asnumpy()
     points = np.array(points).reshape((2, 4))
@@ -113,6 +116,8 @@ def augment_sample(image, points, dims, flip_prob=0.5):
         points = points[..., [1, 0, 3, 2]]
     # color augment
     image = hsv_noise(image)
+    # brightness augment
+    image = brightness_noise(image)
     return mx.nd.array(image), np.asarray(points).reshape((-1,)).tolist()
 
 def point_in_polygon(x, y, pts):
@@ -230,6 +235,7 @@ def fake_plate(smudge=None):
     if smudge:
         plate = smudge(plate)
     plate = hsv_noise(plate)
+    plate = brightness_noise(plate)
     plate = gauss_blur(plate, random.randint(1, 8))
     plate = gauss_noise(plate)
     return mx.nd.array(plate), label
