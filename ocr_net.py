@@ -9,7 +9,7 @@ class ImageEmbedding(mx.gluon.nn.Block):
         self._features = mx.gluon.model_zoo.vision.resnet18_v2().features[:10]
 
     def forward(self, x):
-        y = self._features(x)
+        y = self._features(x).transpose((0, 1, 3, 2))
         return y.reshape((y.shape[0], y.shape[1], -1)).transpose((0, 2, 1))
 
 
