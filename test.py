@@ -21,7 +21,7 @@ def fixed_crop(raw, bbox):
     return mx.image.fixed_crop(raw, x0, y0, x1 - x0, y1 - y0)
 
 
-def recognize_plate(vocab, ocr, plate, beam_size, context):
+def recognize_plate(vocab, ocr, plate, context):
     x = color_normalize(plate).transpose((2, 0, 1)).expand_dims(0)
     enc_y, self_attn = ocr.encode(x.as_in_context(context))
     sequence = [vocab.char2idx("<GO>")]
@@ -62,7 +62,7 @@ def detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, context):
         plt.subplot(math.ceil((len(plates) + 2) / 2), 2, i + 3)
         visualize(plate)
         print("plate[%d]:" % i)
-        recognize_plate(vocab, ocr, plate, 5, context)
+        recognize_plate(vocab, ocr, plate, context)
     plt.show()
 
 
