@@ -230,7 +230,7 @@ def fake_plate(smudge=None):
     if smudge:
         plate = smudge(plate)
     plate = hsv_noise(plate)
-    plate = gauss_blur(plate, random.randint(1, 5))
+    plate = gauss_blur(plate, random.randint(1, 8))
     plate = gauss_noise(plate)
     return mx.nd.array(plate), label
 
