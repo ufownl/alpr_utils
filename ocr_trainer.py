@@ -51,7 +51,7 @@ def train(max_epochs, epoch_size, learning_rate, batch_size, max_hw, max_len, sg
         for x, tgt, tgt_len, lbl in ocr_batches(epoch_size, batch_size, max_hw, vocab, max_len, context):
             training_batches += 1
             with mx.autograd.record():
-                y, enc_self_attn, dec_self_attn, context_attn = model(x, tgt, tgt_len)
+                y, self_attn, context_attn = model(x, tgt, tgt_len)
                 L = loss(y, lbl, mx.nd.not_equal(lbl, vocab.char2idx("<PAD>")).expand_dims(-1))
                 L.backward()
             trainer.step(x.shape[0])
