@@ -24,31 +24,19 @@ def fixed_crop(raw, bbox):
 def recognize_plate(vocab, ocr, plate, beam_size, context):
     x = color_normalize(plate).transpose((2, 0, 1)).expand_dims(0)
     enc_y, enc_self_attn = ocr.encode(x.as_in_context(context))
-    sequences = [([vocab.char2idx("<GO>")], 0.0)]
+    sequence = [vocab.char2idx("<GO>")]
     while True:
-        candidates = []
-        for seq, score in sequences:
-            if seq[-1] == vocab.char2idx("<EOS>"):
-                candidates.append((seq, score))
-            else:
-                target = mx.nd.array(seq, ctx=context).reshape((1, -1))
-                tgt_len = mx.nd.array([len(seq)], ctx=context)
-                output, dec_self_attn, context_attn = ocr.decode(target, tgt_len, enc_y)
-                probs = mx.nd.softmax(output, axis=2)
-                beam = probs[0, -1].topk(k=beam_size, ret_typ="both")
-                for i in range(beam_size):
-                    candidates.append((seq + [int(beam[1][i].asscalar())], score + math.log(beam[0][i].asscalar())))
-        if len(candidates) <= len(sequences):
+        target = mx.nd.array(sequence, ctx=context).reshape((1, -1))
+        tgt_len = mx.nd.array([len(sequence)], ctx=context)
+        output, dec_self_attn, context_attn = ocr.decode(target, tgt_len, enc_y)
+        index = mx.nd.argmax(output, axis=2)
+        char_token = index[0, -1].asscalar()
+        sequence += [char_token]
+        if char_token == vocab.char2idx("<EOS>"):
             break;
-        sequences = sorted(candidates, key=lambda tup: tup[1], reverse=True)[:beam_size]
-    scores = mx.nd.array([score for _, score in sequences], ctx=context)
-    probs = mx.nd.softmax(scores)
-    for i, (seq, score) in enumerate(sequences):
-        text = ""
-        for token in seq[1:-1]:
-            text += vocab.idx2char(token)
-        print(text, score, probs[i].asscalar())
-        print(seq)
+        print(vocab.idx2char(char_token), end="", flush=True)
+    print("")
+    print(sequence)
 
 
 def detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, context):
