@@ -236,6 +236,9 @@ def fake_plate(smudge=None):
         plate = smudge(plate)
     plate = gauss_blur(plate, random.randint(1, 8))
     plate = gauss_noise(plate)
+    ret, buf = cv2.imencode(".jpg", plate, [int(cv2.IMWRITE_JPEG_QUALITY), random.randint(0, 100)])
+    if ret:
+        plate = cv2.imdecode(buf, cv2.IMREAD_COLOR)
     return mx.nd.array(plate), label
 
 def apply_fake_plate(image, points, plate):
