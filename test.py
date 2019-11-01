@@ -21,25 +21,49 @@ def fixed_crop(raw, bbox):
     return mx.image.fixed_crop(raw, x0, y0, x1 - x0, y1 - y0)
 
 
-def recognize_plate(vocab, ocr, plate, context):
+def recognize_plate(vocab, ocr, plate, beam, beam_size, context):
     x = color_normalize(plate).transpose((2, 0, 1)).expand_dims(0)
     enc_y, self_attn = ocr.encode(x.as_in_context(context))
-    sequence = [vocab.char2idx("<GO>")]
-    while True:
-        target = mx.nd.array(sequence, ctx=context).reshape((1, -1))
-        tgt_len = mx.nd.array([len(sequence)], ctx=context)
-        output, context_attn = ocr.decode(target, tgt_len, enc_y)
-        index = mx.nd.argmax(output, axis=2)
-        char_token = index[0, -1].asscalar()
-        sequence += [char_token]
-        if char_token == vocab.char2idx("<EOS>"):
-            break;
-        print(vocab.idx2char(char_token), end="", flush=True)
-    print("")
-    print(sequence)
+    if beam:
+        sequences = [([vocab.char2idx("<GO>")], 0.0)]
+        while True:
+            candidates = []
+            for seq, score in sequences:
+                if seq[-1] == vocab.char2idx("<EOS>"):
+                    candidates.append((seq, score))
+                else:
+                    tgt = mx.nd.array(seq, ctx=context).reshape((1, -1))
+                    tgt_len = mx.nd.array([len(seq)], ctx=context)
+                    y, context_attn = ocr.decode(tgt, tgt_len, enc_y)
+                    probs = mx.nd.softmax(y, axis=2)
+                    beam = probs[0, -1].topk(k=beam_size, ret_typ="both")
+                    for i in range(beam_size):
+                        candidates.append((seq + [int(beam[1][i].asscalar())], score + math.log(beam[0][i].asscalar())))
+            if len(candidates) <= len(sequences):
+                break;
+            sequences = sorted(candidates, key=lambda tup: tup[1], reverse=True)[:beam_size]
+        scores = mx.nd.array([score for _, score in sequences], ctx=context)
+        probs = mx.nd.softmax(scores)
+        for i, (seq, score) in enumerate(sequences):
+            print("".join([vocab.idx2char(token) for token in seq[1:-1]]), score, probs[i].asscalar())
+            print(seq)
+    else:
+        sequence = [vocab.char2idx("<GO>")]
+        while True:
+            tgt = mx.nd.array(sequence, ctx=context).reshape((1, -1))
+            tgt_len = mx.nd.array([len(sequence)], ctx=context)
+            y, context_attn = ocr.decode(tgt, tgt_len, enc_y)
+            index = mx.nd.argmax(y, axis=2)
+            char_token = index[0, -1].asscalar()
+            sequence += [char_token]
+            if char_token == vocab.char2idx("<EOS>"):
+                break;
+            print(vocab.idx2char(char_token), end="", flush=True)
+        print("")
+        print(sequence)
 
 
-def detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, context):
+def detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, beam, beam_size, context):
     h = raw.shape[0]
     w = raw.shape[1]
     f = min(288 * max(h, w) / min(h, w), 608) / min(h, w)
@@ -62,11 +86,11 @@ def detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, context):
         plt.subplot(math.ceil((len(plates) + 2) / 2), 2, i + 3)
         visualize(plate)
         print("plate[%d]:" % i)
-        recognize_plate(vocab, ocr, plate, context)
+        recognize_plate(vocab, ocr, plate, beam, beam_size, context)
     plt.show()
 
 
-def test(images, dims, threshold, plt_hw, seq_len, no_yolo, context):
+def test(images, dims, threshold, plt_hw, seq_len, no_yolo, beam, beam_size, context):
     print("Loading model...")
     if not no_yolo:
         yolo = model_zoo.get_model('yolo3_darknet53_voc', pretrained=True, ctx=context)
@@ -80,7 +104,7 @@ def test(images, dims, threshold, plt_hw, seq_len, no_yolo, context):
         print(path)
         if no_yolo:
             raw = load_image(path)
-            detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, context)
+            detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, beam, beam_size, context)
         else:
             x, raw = data.transforms.presets.yolo.load_test(path, short=512)
             classes, scores, bboxes = yolo(x.as_in_context(context))
@@ -93,7 +117,7 @@ def test(images, dims, threshold, plt_hw, seq_len, no_yolo, context):
             ]
             for i, raw in enumerate(automobiles):
                 print("automobile[%d]:" % i)
-                detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, context)
+                detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, beam, beam_size, context)
 
 
 if __name__ == "__main__":
@@ -104,8 +128,10 @@ if __name__ == "__main__":
     parser.add_argument("--plt_w", help="set the max width of output plate images (default: 384)", type=int, default=384)
     parser.add_argument("--plt_h", help="set the max height of output plate images (default: 128)", type=int, default=128)
     parser.add_argument("--seq_len", help="set the max length of output sequences (default: 8)", type=int, default=8)
-    parser.add_argument("--device_id", help="select device that the model using (default: 0)", type=int, default=0)
     parser.add_argument("--no_yolo", help="do not extract automobiles using YOLOv3", action="store_true")
+    parser.add_argument("--beam", help="using beam search", action="store_true")
+    parser.add_argument("--beam_size", help="set the size of beam (default: 5)", type=int, default=5)
+    parser.add_argument("--device_id", help="select device that the model using (default: 0)", type=int, default=0)
     parser.add_argument("--gpu", help="using gpu acceleration", action="store_true")
     args = parser.parse_args()
 
@@ -114,4 +140,4 @@ if __name__ == "__main__":
     else:
         context = mx.cpu(args.device_id)
 
-    test(args.images, args.dims, args.threshold, (args.plt_h, args.plt_w), args.seq_len, args.no_yolo, context)
+    test(args.images, args.dims, args.threshold, (args.plt_h, args.plt_w), args.seq_len, args.no_yolo, args.beam, args.beam_size, context)
