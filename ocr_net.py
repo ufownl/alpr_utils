@@ -85,4 +85,5 @@ if __name__ == "__main__":
     x = mx.nd.zeros((4, 3, 128, 384))
     net = OcrNet((128, 384), 69, 8)
     net.initialize(mx.init.Xavier())
+    print(net)
     print(net(mx.nd.zeros((4, 3, 128, 384)), mx.nd.zeros((4, 9)), mx.nd.ones((4,)) * 9))
