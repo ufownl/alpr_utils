@@ -29,8 +29,8 @@ def wpod_batches(dataset, batch_size, dims, fake, ctx):
             images, labels = zip(*samples)
             yield mx.nd.concat(*images, dim=0).as_in_context(ctx), mx.nd.concat(*labels, dim=0).as_in_context(ctx)
 
-def ocr_batches(batches, batch_size, out_hw, vocab, max_len, ctx):
-    sampler = OcrSampler(out_hw, vocab)
+def ocr_batches(batches, batch_size, dims, out_hw, vocab, max_len, ctx):
+    sampler = OcrSampler(dims, out_hw, vocab)
     with Pool(cpu_count() * 2) as p:
         for i in range(batches):
             samples = p.map(sampler, [None] * batch_size)
@@ -92,21 +92,17 @@ class WpodSampler:
 
 
 class OcrSampler:
-    def __init__(self, out_hw, vocab):
+    def __init__(self, dims, out_hw, vocab):
         self._smudge = Smudginess()
+        self._dims = dims
         self._out_hw = out_hw
         self._vocab = vocab
 
     def __call__(self, data):
         img, lbl = fake_plate(self._smudge)
-        pts = mx.nd.array([
-            [0.0, 1.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0, 1.0]
-        ])
-        pts = pts + mx.nd.random.uniform(-0.1, 0.1, pts.shape)
-        scale = random.uniform(0.125, 1.0)
-        plt = reconstruct_plates(img, [pts], (int(self._out_hw[1] * scale), int(self._out_hw[0] * scale)))[0]
-        plt = mx.image.imresize(plt, self._out_hw[1], self._out_hw[0])
+        pts = [val + random.uniform(-0.1, 0.1) for val in [0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0]]
+        img, pts = augment_sample(img, pts, self._dims, 0.0)
+        plt = reconstruct_plates(img, [mx.nd.array(pts).reshape((2, 4))], (self._out_hw[1], self._out_hw[0]))[0]
         plt = color_normalize(plt)
         return plt.transpose((2, 0, 1)).expand_dims(0), [self._vocab.char2idx(ch) for ch in lbl], len(lbl)
 
@@ -137,7 +133,7 @@ if __name__ == "__main__":
     vocab = Vocabulary()
     vocab.load("data/train/vocabulary.json")
     print("vocab size: ", vocab.size())
-    for batches, (imgs, tgt, tgt_len, lbl) in enumerate(ocr_batches(5, 4, (128, 384), vocab, 8, mx.cpu())):
+    for batches, (imgs, tgt, tgt_len, lbl) in enumerate(ocr_batches(5, 4, 208, (128, 384), vocab, 8, mx.cpu())):
         print("batch preview: ", imgs, tgt, tgt_len, lbl)
         for i in range(imgs.shape[0]):
             plt.subplot(1, imgs.shape[0], i + 1)

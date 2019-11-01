@@ -8,7 +8,7 @@ from utils import Vocabulary
 from ocr_net import OcrNet
 
 
-def train(max_epochs, epoch_size, learning_rate, batch_size, max_hw, max_len, sgd, context):
+def train(max_epochs, epoch_size, learning_rate, batch_size, dims, max_hw, max_len, sgd, context):
     print("Loading dataset...", flush=True)
     vocab = Vocabulary()
     if os.path.isfile("model/vocabulary.json"):
@@ -48,7 +48,7 @@ def train(max_epochs, epoch_size, learning_rate, batch_size, max_hw, max_len, sg
         training_batches = 0
         num_correct = 0
         num_inst = 0
-        for x, tgt, tgt_len, lbl in ocr_batches(epoch_size, batch_size, max_hw, vocab, max_len, context):
+        for x, tgt, tgt_len, lbl in ocr_batches(epoch_size, batch_size, dims, max_hw, vocab, max_len, context):
             training_batches += 1
             with mx.autograd.record():
                 y, self_attn, context_attn = model(x, tgt, tgt_len)
@@ -83,6 +83,7 @@ if __name__ == "__main__":
     parser.add_argument("--epoch_size", help="set the number of batches per epoch (default: 1000)", type=int, default=1000)
     parser.add_argument("--learning_rate", help="set the learning rate (default: 0.0001)", type=float, default=0.0001)
     parser.add_argument("--batch_size", help="set the batch size (default: 32)", type=int, default=32)
+    parser.add_argument("--dims", help="set the sample dimentions (default: 208)", type=int, default=208)
     parser.add_argument("--img_w", help="set the max width of input images (default: 384)", type=int, default=384)
     parser.add_argument("--img_h", help="set the max height of input images (default: 128)", type=int, default=128)
     parser.add_argument("--seq_len", help="set the max length of output sequences (default: 8)", type=int, default=8)
@@ -96,4 +97,4 @@ if __name__ == "__main__":
     else:
         context = mx.cpu(args.device_id)
 
-    train(args.max_epochs, args.epoch_size, args.learning_rate, args.batch_size, (args.img_h, args.img_w), args.seq_len, args.sgd, context)
+    train(args.max_epochs, args.epoch_size, args.learning_rate, args.batch_size, args.dims, (args.img_h, args.img_w), args.seq_len, args.sgd, context)
