@@ -6,7 +6,7 @@ from transformer_utils import MultiHeadAttention, PositionalEncoding, TimingEnco
 class ImageEmbedding(mx.gluon.nn.Block):
     def __init__(self, **kwargs):
         super(ImageEmbedding, self).__init__(**kwargs)
-        self._features = mx.gluon.model_zoo.vision.resnet18_v2().features[:10]
+        self._features = mx.gluon.model_zoo.vision.resnet18_v2().features[:11]
 
     def forward(self, x):
         y = self._features(x).transpose((0, 1, 3, 2))
