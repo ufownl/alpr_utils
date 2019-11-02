@@ -78,8 +78,7 @@ def wpod_loss(pred, label):
     obj_label = label[:, :, :, 0]
     bg_pred = pred[:, :, :, 1]
     bg_label = 1 - obj_label
-    log_loss = mx.gluon.loss.LogisticLoss(label_format="binary")
-    classify_L = log_loss(obj_pred, obj_label) + log_loss(bg_pred, bg_label)
+    classify_L = mx.nd.mean(-obj_label * mx.nd.log(obj_pred) - bg_label * mx.nd.log(bg_pred), axis=0, exclude=True)
     affine = mx.nd.concat(
         mx.nd.concat(
             mx.nd.relu(pred[:, :, :, 2:3]),
