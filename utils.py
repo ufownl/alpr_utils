@@ -84,7 +84,7 @@ def hsv_noise(img):
 def brightness_noise(img, ratio=0.8):
     return np.clip(img * (1.0 + random.uniform(-ratio, ratio)), 0, 255)
 
-def augment_sample(image, points, dims, flip_prob=0.5, jpeg=False):
+def augment_sample(image, points, dims, flip_prob=0.5):
     image = image.astype("uint8").asnumpy()
     points = np.array(points).reshape((2, 4))
     points = points * np.array([[image.shape[1]], [image.shape[0]]])
@@ -118,11 +118,6 @@ def augment_sample(image, points, dims, flip_prob=0.5, jpeg=False):
     image = hsv_noise(image)
     # brightness augment
     image = brightness_noise(image)
-    # jpeg compression augment
-    if jpeg:
-        ret, buf = cv2.imencode(".jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), random.randint(20, 100)])
-        if ret:
-            image = cv2.imdecode(buf, cv2.IMREAD_COLOR)
     return mx.nd.array(image), np.asarray(points).reshape((-1,)).tolist()
 
 def point_in_polygon(x, y, pts):

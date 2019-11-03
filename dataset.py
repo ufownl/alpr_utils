@@ -101,7 +101,7 @@ class OcrSampler:
     def __call__(self, data):
         img, lbl = fake_plate(self._smudge)
         pts = [val + random.uniform(-0.1, 0.1) for val in [0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0]]
-        img, pts = augment_sample(img, pts, self._dims, 0.0, True)
+        img, pts = augment_sample(img, pts, self._dims, 0.0)
         plt = reconstruct_plates(img, [mx.nd.array(pts).reshape((2, 4))], (self._out_hw[1], self._out_hw[0]))[0]
         plt = color_normalize(plt)
         return plt.transpose((2, 0, 1)).expand_dims(0), [self._vocab.char2idx(ch) for ch in lbl], len(lbl)
