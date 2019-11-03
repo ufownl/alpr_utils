@@ -4,7 +4,7 @@ import random
 import argparse
 import mxnet as mx
 from dataset import load_dataset, batches
-from wpod_net import WpodNet, wpod_loss
+from wpod_net import WpodNet, WpodLoss
 
 
 def train(max_epochs, learning_rate, batch_size, dims, fake, sgd, context):
@@ -17,6 +17,7 @@ def train(max_epochs, learning_rate, batch_size, dims, fake, sgd, context):
     print("Validation set: ", len(validation_set))
 
     model = WpodNet()
+    loss = WpodLoss()
     if os.path.isfile("model/wpod_net.params"):
         model.load_parameters("model/wpod_net.params", ctx=context)
     else:
@@ -48,7 +49,7 @@ def train(max_epochs, learning_rate, batch_size, dims, fake, sgd, context):
             training_batches += 1
             with mx.autograd.record():
                 y = model(x)
-                L = wpod_loss(y, label)
+                L = loss(y, label)
                 L.backward()
             trainer.step(x.shape[0])
             training_batch_L = mx.nd.mean(L).asscalar()
@@ -65,7 +66,7 @@ def train(max_epochs, learning_rate, batch_size, dims, fake, sgd, context):
         for x, label in batches(validation_set, batch_size, dims, fake, context):
             validation_batches += 1
             y = model(x)
-            L = wpod_loss(y, label)
+            L = loss(y, label)
             validation_batch_L = mx.nd.mean(L).asscalar()
             if validation_batch_L != validation_batch_L:
                 raise ValueError()
