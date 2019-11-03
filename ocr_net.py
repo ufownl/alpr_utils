@@ -6,18 +6,35 @@ from transformer_utils import MultiHeadAttention, PositionalEncoding, TimingEnco
 class ImageEmbedding(mx.gluon.nn.Block):
     def __init__(self, **kwargs):
         super(ImageEmbedding, self).__init__(**kwargs)
-        self._features = mx.gluon.model_zoo.vision.resnet18_v2().features[:11]
+        with self.name_scope():
+            self._block = mx.gluon.nn.Sequential()
+            self._block.add(
+                mx.gluon.nn.BatchNorm(scale=False, center=False),
+                mx.gluon.nn.Conv2D(64, 7, 2, 3),
+                mx.gluon.nn.BatchNorm(),
+                mx.gluon.nn.Activation("relu"),
+                mx.gluon.model_zoo.vision.BasicBlockV2(64, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(64, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(128, 2, True),
+                mx.gluon.model_zoo.vision.BasicBlockV2(128, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(256, 2, True),
+                mx.gluon.model_zoo.vision.BasicBlockV2(256, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(512, 2, True),
+                mx.gluon.model_zoo.vision.BasicBlockV2(512, 1),
+                mx.gluon.nn.BatchNorm(),
+                mx.gluon.nn.Activation("relu"),
+            )
 
     def forward(self, x):
-        y = self._features(x).transpose((0, 1, 3, 2))
+        y = self._block(x).transpose((0, 1, 3, 2))
         return y.reshape((y.shape[0], y.shape[1], -1)).transpose((0, 2, 1))
 
 
 class ImageEncoder(mx.gluon.nn.Block):
     def __init__(self, max_hw, layers, dims, heads, ffn_dims, dropout=0.0, **kwargs):
         super(ImageEncoder, self).__init__(**kwargs)
-        h = math.ceil(max_hw[0] / 32)
-        w = math.ceil(max_hw[1] / 32)
+        h = math.ceil(max_hw[0] / 16)
+        w = math.ceil(max_hw[1] / 16)
         with self.name_scope():
             self._embedding = ImageEmbedding()
             self._pos_encoding = PositionalEncoding(dims, h * w)
@@ -82,8 +99,8 @@ class OcrNet(mx.gluon.nn.Block):
 
 
 if __name__ == "__main__":
-    x = mx.nd.zeros((4, 3, 128, 384))
-    net = OcrNet((128, 384), 69, 8)
+    x = mx.nd.zeros((4, 3, 48, 144))
+    net = OcrNet((48, 144), 69, 8)
     net.initialize(mx.init.Xavier())
     print(net)
-    print(net(mx.nd.zeros((4, 3, 128, 384)), mx.nd.zeros((4, 9)), mx.nd.ones((4,)) * 9))
+    print(net(mx.nd.zeros((4, 3, 48, 144)), mx.nd.zeros((4, 9)), mx.nd.ones((4,)) * 9))
