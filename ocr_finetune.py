@@ -88,8 +88,8 @@ def finetune(max_epochs, learning_rate, batch_size, dims, max_hw, max_len, sgd, 
             validation_num_inst += len(pred_lbl.reshape((-1))) - (lbl == vocab.char2idx("<PAD>")).sum().asscalar()
         validation_avg_L = validation_total_L / validation_batches
 
-        print("[Epoch %d]  training_loss %.10f  validation_loss 0.0  training_accuracy %.10f  validation_accuracy %.10f  duration %.2fs" % (
-            epoch + 1, training_avg_L, training_num_correct / training_num_inst, validation_num_correct / validation_num_inst, time.time() - ts
+        print("[Epoch %d]  training_loss %.10f  validation_loss %.10f  training_accuracy %.10f  validation_accuracy %.10f  duration %.2fs" % (
+            epoch + 1, training_avg_L, validation_avg_L, training_num_correct / training_num_inst, validation_num_correct / validation_num_inst, time.time() - ts
         ), flush=True)
 
         model.save_parameters("model/ocr_net.params")
