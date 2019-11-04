@@ -8,9 +8,9 @@ from multiprocessing.dummy import Pool
 from utils import Smudginess, Vocabulary, fake_plate, apply_fake_plate, augment_sample, object_label, reconstruct_plates
 
 
-def load_dataset(path):
-    with open(os.path.join(path, "dataset.json")) as f:
-        return [(os.path.join(path, data["image"]), data["points"], data["plate"]) for data in json.loads(f.read())]
+def load_dataset(root, filename="dataset.json"):
+    with open(os.path.join(root, filename)) as f:
+        return [(os.path.join(root, data["image"]), data["points"], data["plate"]) for data in json.loads(f.read())]
 
 def load_image(path):
     with open(path, "rb") as f:
@@ -25,15 +25,25 @@ def wpod_batches(dataset, batch_size, dims, fake, ctx):
     with Pool(cpu_count() * 2) as p:
         for i in range(batches):
             start = i * batch_size
-            samples = p.map(sampler, dataset[start: start + batch_size])
+            samples = p.map(sampler, dataset[start:start+batch_size])
             images, labels = zip(*samples)
             yield mx.nd.concat(*images, dim=0).as_in_context(ctx), mx.nd.concat(*labels, dim=0).as_in_context(ctx)
 
-def ocr_batches(batches, batch_size, dims, out_hw, vocab, max_len, ctx):
+def ocr_batches(dataset, batch_size, dims, out_hw, vocab, max_len, ctx):
+    if type(dataset) is int:
+        batches = dataset
+    else:
+        batches = len(dataset) // batch_size
+        if batches * batch_size < len(dataset):
+            batches += 1
     sampler = OcrSampler(dims, out_hw, vocab)
     with Pool(cpu_count() * 2) as p:
         for i in range(batches):
-            samples = p.map(sampler, [None] * batch_size)
+            if type(dataset) is int:
+                samples = p.map(sampler, [None] * batch_size)
+            else:
+                start = i * batch_size
+                samples = p.map(sampler, dataset[start:start+batch_size])
             imgs, tgt_tok, tgt_len = zip(*samples)
             tgt_bat = mx.nd.array(pad_batch(add_sent_prefix(tgt_tok, vocab), vocab, max_len + 1), ctx=ctx)
             tgt_len_bat = mx.nd.array(tgt_len, ctx=ctx) + 1
@@ -99,9 +109,14 @@ class OcrSampler:
         self._vocab = vocab
 
     def __call__(self, data):
-        img, lbl = fake_plate(self._smudge)
-        pts = [val + random.uniform(-0.1, 0.1) for val in [0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0]]
-        img, pts = augment_sample(img, pts, self._dims, 0.0)
+        if data:
+            img = load_image(data[0])
+            img, pts = augment_sample(img, data[1], self._dims, 0.0)
+            lbl = data[2]
+        else:
+            img, lbl = fake_plate(self._smudge)
+            pts = [val + random.uniform(-0.1, 0.1) for val in [0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0]]
+            img, pts = augment_sample(img, pts, self._dims, 0.0)
         plt = reconstruct_plates(img, [mx.nd.array(pts).reshape((2, 4))], (self._out_hw[1], self._out_hw[0]))[0]
         plt = color_normalize(plt)
         return plt.transpose((2, 0, 1)).expand_dims(0), [self._vocab.char2idx(ch) for ch in lbl], len(lbl)
@@ -139,3 +154,11 @@ if __name__ == "__main__":
             plt.subplot(1, imgs.shape[0], i + 1)
             visualize(reconstruct_color(imgs.transpose((0, 2, 3, 1))[i]))
         plt.show()
+    for batches, (imgs, tgt, tgt_len, lbl) in enumerate(ocr_batches(dataset, 4, 208, (48, 144), vocab, 8, mx.cpu())):
+        print("batch preview: ", imgs, tgt, tgt_len, lbl)
+        for i in range(imgs.shape[0]):
+            plt.subplot(1, imgs.shape[0], i + 1)
+            visualize(reconstruct_color(imgs.transpose((0, 2, 3, 1))[i]))
+        plt.show()
+        if batches >= 4:
+            break
