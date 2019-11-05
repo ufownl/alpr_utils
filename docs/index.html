@@ -17,7 +17,7 @@
       </p>
       <p>
         <input type="file" accept="image/*" @change="chooseImage" :disabled="processing" />
-        <button @click="wpod" :disabled="processing">WPOD</button>
+        <button @click="demo" :disabled="processing">Demo</button>
       </p>
       <div>{{ message }}</div>
       <p v-for="res in results">
@@ -38,11 +38,13 @@
           <table>\
             <tr>\
               <th>plate</th>\
-              <th>score</th>\
+              <th>result</th>\
+              <th>confidence</th>\
             </tr>\
             <tr v-for="plt in plates">\
-              <td><img :src="\'data:image/png;base64, \' + plt.plate" alt="plate" /></td>\
-              <td>{{ plt.score }}</td>\
+              <td><img :src="\'data:image/png;base64, \' + plt.image" alt="plate" /></td>\
+              <td>{{ plt.text }}</td>\
+              <td>{{ plt.confidence }}</td>\
             </tr>\
           </table>\
         '
@@ -72,7 +74,7 @@
           chooseImage(e) {
             this.image = e.target.files[0]
           },
-          wpod() {
+          demo() {
             if (!this.image) {
               this.message = 'Please select an image file!'
               return
@@ -81,7 +83,7 @@
             this.processing = true
             let form = new FormData()
             form.append('image', this.image)
-            let url = encodeURI(this.server + '/alpr_utils/wpod')
+            let url = encodeURI(this.server + '/alpr_utils/demo')
             let xhr = new XMLHttpRequest()
             xhr.open('POST', url, true)
             xhr.onload = () => {
