@@ -100,7 +100,7 @@ class OcrNet(mx.gluon.nn.Block):
 
 if __name__ == "__main__":
     x = mx.nd.zeros((4, 3, 48, 144))
-    net = OcrNet((48, 144), 69, 8)
+    net = OcrNet((48, 144), 72, 8)
     net.initialize(mx.init.Xavier())
     print(net)
     print(net(mx.nd.zeros((4, 3, 48, 144)), mx.nd.zeros((4, 9)), mx.nd.ones((4,)) * 9))
