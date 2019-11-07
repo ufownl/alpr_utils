@@ -102,15 +102,16 @@ def test(images, dims, threshold, plt_hw, seq_len, no_yolo, beam, beam_size, con
     ocr.load_parameters("model/ocr_net.params", ctx=context)
     for path in images:
         print(path)
+        raw = load_image(path)
         if no_yolo:
-            raw = load_image(path)
             detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, beam, beam_size, context)
         else:
-            x, raw = data.transforms.presets.yolo.load_test(path, short=512)
+            x, _ = data.transforms.presets.yolo.transform_test(raw, short=512)
             classes, scores, bboxes = yolo(x.as_in_context(context))
+            bboxes[0, :, 0::2] = bboxes[0, :, 0::2] / x.shape[3] * raw.shape[1]
+            bboxes[0, :, 1::2] = bboxes[0, :, 1::2] / x.shape[2] * raw.shape[0]
             automobiles = [
-                fixed_crop(mx.nd.array(raw), bboxes[0, i])
-                for i in range(classes.shape[1])
+                fixed_crop(raw, bboxes[0, i]) for i in range(classes.shape[1])
                     if (yolo.classes[int(classes[0, i].asscalar())] == 'car' or
                         yolo.classes[int(classes[0, i].asscalar())] == 'bus') and
                         scores[0, i].asscalar() > 0.5

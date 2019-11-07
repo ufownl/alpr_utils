@@ -81,10 +81,12 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
         ]
 
     def _detect_automobiles(self, raw):
-        x, raw = data.transforms.presets.yolo.transform_test(raw, short=512)
+        x, _ = data.transforms.presets.yolo.transform_test(raw, short=512)
         classes, scores, bboxes = self.yolo(x)
+        bboxes[0, :, 0::2] = bboxes[0, :, 0::2] / x.shape[3] * raw.shape[1]
+        bboxes[0, :, 1::2] = bboxes[0, :, 1::2] / x.shape[2] * raw.shape[0]
         return [
-            fixed_crop(mx.nd.array(raw), bboxes[0, i]) for i in range(classes.shape[1])
+            fixed_crop(raw, bboxes[0, i]) for i in range(classes.shape[1])
                 if (self.yolo.classes[int(classes[0, i].asscalar())] == 'car' or
                     self.yolo.classes[int(classes[0, i].asscalar())] == 'bus') and
                     scores[0, i].asscalar() > 0.5
