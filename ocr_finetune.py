@@ -17,7 +17,7 @@ def finetune(max_epochs, learning_rate, batch_size, dims, max_hw, max_len, sgd, 
     validation_set = dataset[split:]
     print("Validation set: ", len(validation_set))
 
-    print("Loading dataset...", flush=True)
+    print("Loading model...", flush=True)
     vocab = Vocabulary()
     vocab.load("model/vocabulary.json")
     print("Vocabulary size: ", vocab.size())
