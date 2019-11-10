@@ -4,7 +4,6 @@ import math
 import random
 import numpy as np
 import mxnet as mx
-from fake.chinese import random_plate
 
 def points_matrix(pts):
     return np.matrix(np.concatenate((pts, np.ones((1, pts.shape[1]))), 0))
@@ -216,29 +215,7 @@ def reconstruct_plates(image, plate_pts, out_size=(240, 80)):
         plates.append(mx.nd.array(plate))
     return plates
 
-def gauss_blur(image, level):
-    return cv2.blur(image, (level * 2 + 1, level * 2 + 1))
-
-def gauss_noise(image):
-    for i in range(image.shape[2]):
-        c = image[:, :, i]
-        diff = 255 - c.max();
-        noise = np.random.normal(0, random.randint(1, 6), c.shape)
-        noise = (noise - noise.min()) / (noise.max() - noise.min())
-        noise = diff * noise
-        image[:, :, i] = c + noise.astype(np.uint8)
-    return image
-
-def fake_plate(smudge=None):
-    draw = random_plate.Draw()
-    plate, label = draw()
-    if smudge:
-        plate = smudge(plate)
-    plate = gauss_blur(plate, random.randint(1, 8))
-    plate = gauss_noise(plate)
-    return mx.nd.array(plate), label
-
-def apply_fake_plate(image, points, plate):
+def apply_plate(image, points, plate):
     image = image.astype("uint8").asnumpy()
     plate = plate.astype("uint8").asnumpy()
     points = np.array(points).reshape((2, 4))
@@ -249,17 +226,6 @@ def apply_fake_plate(image, points, plate):
     plate = cv2.warpPerspective(plate, m, (image.shape[1], image.shape[0]))
     mask = (plate == 0).astype(np.uint8) * 255
     return mx.nd.array(cv2.bitwise_or(cv2.bitwise_and(image, mask), plate))
-
-
-class Smudginess:
-    def __init__(self, smu="res/smu.png"):
-        self._smu = cv2.imread(smu)
-
-    def __call__(self, raw):
-        y = random.randint(0, self._smu.shape[0] - raw.shape[0])
-        x = random.randint(0, self._smu.shape[1] - raw.shape[1])
-        texture = self._smu[y:y+raw.shape[0], x:x+raw.shape[1]]
-        return cv2.bitwise_not(cv2.bitwise_and(cv2.bitwise_not(raw), texture))
 
 
 class Vocabulary:

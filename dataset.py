@@ -5,7 +5,8 @@ import mxnet as mx
 import matplotlib.pyplot as plt
 from multiprocessing import cpu_count
 from multiprocessing.dummy import Pool
-from utils import Smudginess, Vocabulary, fake_plate, apply_fake_plate, augment_sample, object_label, reconstruct_plates
+from utils import Vocabulary, apply_plate, augment_sample, object_label, reconstruct_plates
+from fake.utils import Smudginess, fake_plate
 
 
 def load_dataset(root, filename="dataset.json"):
@@ -94,7 +95,7 @@ class WpodSampler:
         img = load_image(data[0])
         if random.random() < self._fake:
             fake, _ = fake_plate(self._smudge)
-            img = apply_fake_plate(img, data[1], fake)
+            img = apply_plate(img, data[1], fake)
         img, pts = augment_sample(img, data[1], self._dims)
         img = color_normalize(img)
         lbl = object_label(pts, self._dims, 16)
