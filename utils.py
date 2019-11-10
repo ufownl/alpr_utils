@@ -119,6 +119,13 @@ def augment_sample(image, points, dims, flip_prob=0.5):
     image = brightness_noise(image)
     return mx.nd.array(image), np.asarray(points).reshape((-1,)).tolist()
 
+def color_normalize(img):
+    return mx.image.color_normalize(
+        img.astype("float32") / 255,
+        mean = mx.nd.array([0.485, 0.456, 0.406]),
+        std = mx.nd.array([0.229, 0.224, 0.225])
+    )
+
 def point_in_polygon(x, y, pts):
     n = len(pts) // 2
     pts_x = [pts[i] for i in range(0, n)]

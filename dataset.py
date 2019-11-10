@@ -5,7 +5,7 @@ import mxnet as mx
 import matplotlib.pyplot as plt
 from multiprocessing import cpu_count
 from multiprocessing.dummy import Pool
-from utils import Vocabulary, apply_plate, augment_sample, object_label, reconstruct_plates
+from utils import Vocabulary, apply_plate, augment_sample, color_normalize, object_label, reconstruct_plates
 from fake.utils import Smudginess, fake_plate
 
 
@@ -70,13 +70,6 @@ def visualize(image, labels=None):
             if not tag is None:
                 plt.text(min(x), min(y) - 10, tag, bbox=dict(facecolor="green", alpha=0.5), fontdict=dict(color="white", size=8))
     plt.axis("off")
-
-def color_normalize(img):
-    return mx.image.color_normalize(
-        img.astype("float32") / 255,
-        mean = mx.nd.array([0.485, 0.456, 0.406]),
-        std = mx.nd.array([0.229, 0.224, 0.225])
-    )
 
 def reconstruct_color(img):
     mean = mx.nd.array([0.485, 0.456, 0.406])

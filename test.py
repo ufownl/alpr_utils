@@ -3,8 +3,8 @@ import argparse
 import mxnet as mx
 import matplotlib.pyplot as plt
 from gluoncv import model_zoo, data
-from dataset import load_image, visualize, color_normalize
-from utils import plate_labels, reconstruct_plates, Vocabulary
+from dataset import load_image, visualize
+from utils import color_normalize, plate_labels, reconstruct_plates, Vocabulary
 from wpod_net import WpodNet
 from ocr_net import OcrNet
 

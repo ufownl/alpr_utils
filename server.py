@@ -10,8 +10,7 @@ import http.server
 import cgi
 import mxnet as mx
 from gluoncv import model_zoo, data
-from dataset import color_normalize
-from utils import plate_labels, reconstruct_plates, Vocabulary
+from utils import color_normalize, plate_labels, reconstruct_plates, Vocabulary
 from wpod_net import WpodNet
 from ocr_net import OcrNet
 
