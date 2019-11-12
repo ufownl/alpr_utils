@@ -23,17 +23,17 @@ class WpodNet(mx.gluon.nn.Block):
             self._block = mx.gluon.nn.Sequential()
             self._block.add(
                 mx.gluon.nn.BatchNorm(scale=False, center=False),
-                mx.gluon.nn.Conv2D(64, 7, 2, 3),
+                mx.gluon.nn.Conv2D(32, 7, 2, 3),
                 mx.gluon.nn.BatchNorm(),
                 mx.gluon.nn.Activation("relu"),
-                mx.gluon.model_zoo.vision.BasicBlockV2(64, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(32, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(32, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(64, 2, True),
                 mx.gluon.model_zoo.vision.BasicBlockV2(64, 1),
                 mx.gluon.model_zoo.vision.BasicBlockV2(128, 2, True),
                 mx.gluon.model_zoo.vision.BasicBlockV2(128, 1),
                 mx.gluon.model_zoo.vision.BasicBlockV2(256, 2, True),
                 mx.gluon.model_zoo.vision.BasicBlockV2(256, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(512, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(512, 1),
                 mx.gluon.nn.BatchNorm(),
                 mx.gluon.nn.Activation("relu"),
                 Detection()

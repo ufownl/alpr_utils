@@ -80,8 +80,8 @@ class OcrNet(mx.gluon.nn.Block):
     def __init__(self, max_hw, vocab_size, max_len, **kwargs):
         super(OcrNet, self).__init__(**kwargs)
         with self.name_scope():
-            self._encoder = ImageEncoder(max_hw, 6, 512, 8, 2048, 0.5)
-            self._decoder = LpDecoder(vocab_size, max_len + 1, 6, 512, 8, 2048, 0.5)
+            self._encoder = ImageEncoder(max_hw, 6, 256, 8, 2048, 0.5)
+            self._decoder = LpDecoder(vocab_size, max_len + 1, 6, 256, 8, 2048, 0.5)
             self._output = mx.gluon.nn.Dense(vocab_size, flatten=False)
 
     def forward(self, img, tgt_seq, tgt_len):
