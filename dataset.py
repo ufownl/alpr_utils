@@ -106,6 +106,8 @@ class OcrSampler:
         if data:
             img = load_image(data[0])
             img, pts = augment_sample(img, data[1], self._dims, 0.0)
+            img = reconstruct_plates(img, [mx.nd.array(pts).reshape((2, 4))], (self._out_hw[1], self._out_hw[0]))[0]
+            pts = [val + random.uniform(-0.1, 0.1) for val in [0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0]]
             lbl = data[2]
         else:
             img, lbl = fake_plate(self._smudge)
