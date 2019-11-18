@@ -4,23 +4,23 @@ from transformer_utils import MultiHeadAttention, PositionalEncoding, TimingEnco
 
 
 class ImageEmbedding(mx.gluon.nn.Block):
-    def __init__(self, **kwargs):
+    def __init__(self, dims, **kwargs):
         super(ImageEmbedding, self).__init__(**kwargs)
         with self.name_scope():
             self._block = mx.gluon.nn.Sequential()
             self._block.add(
                 mx.gluon.nn.BatchNorm(scale=False, center=False),
-                mx.gluon.nn.Conv2D(64, 7, 2, 3),
+                mx.gluon.nn.Conv2D(dims // 8, 7, 2, 3),
                 mx.gluon.nn.BatchNorm(),
                 mx.gluon.nn.Activation("relu"),
-                mx.gluon.model_zoo.vision.BasicBlockV2(64, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(64, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(128, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(128, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(256, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(256, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(512, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(512, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 8, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 8, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 4, 2, True),
+                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 4, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 2, 2, True),
+                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 2, 1),
+                mx.gluon.model_zoo.vision.BasicBlockV2(dims, 2, True),
+                mx.gluon.model_zoo.vision.BasicBlockV2(dims, 1),
                 mx.gluon.nn.BatchNorm(),
                 mx.gluon.nn.Activation("relu"),
             )
@@ -36,7 +36,7 @@ class ImageEncoder(mx.gluon.nn.Block):
         h = math.ceil(max_hw[0] / 16)
         w = math.ceil(max_hw[1] / 16)
         with self.name_scope():
-            self._embedding = ImageEmbedding()
+            self._embedding = ImageEmbedding(dims)
             self._pos_encoding = PositionalEncoding(dims, h * w)
             self._time_encoding = TimingEncoding(dims, layers)
             self._encoder = EncoderLayer(dims, heads, ffn_dims, dropout)
