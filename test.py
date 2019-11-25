@@ -1,3 +1,4 @@
+import time
 import math
 import argparse
 import mxnet as mx
@@ -22,6 +23,7 @@ def fixed_crop(raw, bbox):
 
 
 def recognize_plate(vocab, ocr, plate, beam, beam_size, context):
+    ts = time.time()
     x = color_normalize(plate).transpose((2, 0, 1)).expand_dims(0)
     enc_y, self_attn = ocr.encode(x.as_in_context(context))
     if beam:
@@ -44,6 +46,7 @@ def recognize_plate(vocab, ocr, plate, beam, beam_size, context):
             sequences = sorted(candidates, key=lambda tup: tup[1], reverse=True)[:beam_size]
         scores = mx.nd.array([score for _, score in sequences], ctx=context)
         probs = mx.nd.softmax(scores)
+        print("ocr profiling: %f" % (time.time() - ts))
         for i, (seq, score) in enumerate(sequences):
             print("".join([vocab.idx2char(token) for token in seq[1:-1]]), score, probs[i].asscalar())
             print(seq)
@@ -67,6 +70,7 @@ def detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, beam, beam_size
     h = raw.shape[0]
     w = raw.shape[1]
     f = min(288 * max(h, w) / min(h, w), 608) / min(h, w)
+    ts = time.time()
     img = mx.image.imresize(
         raw,
         int(w * f) + (0 if w % 16 == 0 else 16 - w % 16),
@@ -78,6 +82,7 @@ def detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, beam, beam_size
     affines = y[0, :, :, 2:]
     labels = plate_labels(img, probs, affines, dims, 16, threshold)
     plates = reconstruct_plates(raw, [pts for pts, _ in labels], (plt_hw[1], plt_hw[0]))
+    print("wpod profiling: %f" % (time.time() - ts))
     plt.subplot(math.ceil((len(plates) + 2) / 2), 2, 1)
     visualize(img, [(pts.reshape((-1)).asnumpy().tolist(), str(prob)) for pts, prob in labels])
     plt.subplot(math.ceil((len(plates) + 2) / 2), 2, 2)
@@ -106,6 +111,7 @@ def test(images, dims, threshold, plt_hw, seq_len, no_yolo, beam, beam_size, con
         if no_yolo:
             detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, beam, beam_size, context)
         else:
+            ts = time.time()
             x, _ = data.transforms.presets.yolo.transform_test(raw, short=512)
             classes, scores, bboxes = yolo(x.as_in_context(context))
             bboxes[0, :, 0::2] = bboxes[0, :, 0::2] / x.shape[3] * raw.shape[1]
@@ -116,6 +122,7 @@ def test(images, dims, threshold, plt_hw, seq_len, no_yolo, beam, beam_size, con
                         yolo.classes[int(classes[0, i].asscalar())] == 'bus') and
                         scores[0, i].asscalar() > 0.5
             ]
+            print("yolo profiling: %f" % (time.time() - ts))
             for i, raw in enumerate(automobiles):
                 print("automobile[%d]:" % i)
                 detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, beam, beam_size, context)
