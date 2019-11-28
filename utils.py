@@ -95,7 +95,6 @@ def augment_sample(image, points, dims, flip_prob=0.5):
         angles = (angles / angles.sum()) * (max_angles / max_angles.sum())
     rotate = rotate_matrix(dims, dims, angles)
     # apply projection
-    trans = np.matmul(rotate, crop)
     image, points = project(image, points, np.matmul(rotate, crop), dims)
     # scale the coordinates of points to [0, 1]
     points = points / dims
