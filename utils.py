@@ -18,7 +18,7 @@ def rect_matrix(tlx, tly, brx, bry):
 def transform_matrix(pts, t_pts):
     return cv2.getPerspectiveTransform(np.float32(pts[:2, :].T), np.float32(t_pts[:2, :].T))
 
-def perspective_transform_matrix(width, height, angles=np.zeros(3), zcop=1000.0, dpp=1000.0):
+def rotate_matrix(width, height, angles=np.zeros(3), zcop=1000.0, dpp=1000.0):
     rads = np.deg2rad(angles)
     rx = np.matrix([
         [1.0, 0.0, 0.0],
@@ -46,8 +46,8 @@ def perspective_transform_matrix(width, height, angles=np.zeros(3), zcop=1000.0,
         [0.0, height, 0.0, height],
         [0.0, 0.0, 0.0, 0.0]
     ])
-    xyz = r * (xyz - np.matrix([[width], [height], [0.0]]) / 2.0)
-    xyz = xyz - np.matrix([[0.0], [0.0], [zcop]])
+    half = np.matrix([[width], [height], [0.0]]) / 2.0
+    xyz = r * (xyz - half) - np.matrix([[0.0], [0.0], [zcop]])
     xyz = np.concatenate((xyz, np.ones((1, 4))), 0)
     p = np.matrix([
         [1.0, 0.0, 0.0, 0.0],
@@ -55,7 +55,7 @@ def perspective_transform_matrix(width, height, angles=np.zeros(3), zcop=1000.0,
         [0.0, 0.0, -1.0 / dpp, 0.0]
     ])
     t_hxy = p * xyz
-    t_hxy = t_hxy / t_hxy[2, :] + np.matrix([[width], [height], [0.0]]) / 2.0
+    t_hxy = t_hxy / t_hxy[2, :] + half
     return transform_matrix(hxy, t_hxy)
 
 def project(img, pts, trans, dims):
@@ -93,7 +93,7 @@ def augment_sample(image, points, dims, flip_prob=0.5):
     angles = np.random.rand(3) * max_angles
     if angles.sum() > 120:
         angles = (angles / angles.sum()) * (max_angles / max_angles.sum())
-    rotate = perspective_transform_matrix(dims, dims, angles)
+    rotate = rotate_matrix(dims, dims, angles)
     # apply projection
     trans = np.matmul(rotate, crop)
     image, points = project(image, points, np.matmul(rotate, crop), dims)
