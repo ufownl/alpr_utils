@@ -16,16 +16,7 @@ def rect_matrix(tlx, tly, brx, bry):
     ])
 
 def transform_matrix(pts, t_pts):
-    a = np.zeros((8, 9))
-    for i in range(0, 4):
-        x = pts[:, i].T
-        tx = t_pts[:, i]
-        a[i * 2, 3:6] = -tx[2] * x
-        a[i * 2, 6:] = tx[1] * x
-        a[i * 2 + 1, :3] = tx[2] * x
-        a[i * 2 + 1, 6:] = -tx[0] * x
-    u, s, v = np.linalg.svd(a)
-    return v[-1, :].reshape((3, 3))
+    return cv2.getPerspectiveTransform(np.float32(pts[:2, :].T), np.float32(t_pts[:2, :].T))
 
 def perspective_transform_matrix(width, height, angles=np.zeros(3), zcop=1000.0, dpp=1000.0):
     rads = np.deg2rad(angles)
