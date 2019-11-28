@@ -59,7 +59,7 @@ def rotate_matrix(width, height, angles=np.zeros(3), zcop=1000.0, dpp=1000.0):
     return transform_matrix(hxy, t_hxy)
 
 def project(img, pts, trans, dims):
-    t_img = cv2.warpPerspective(img, trans, (dims, dims), flags=cv2.INTER_LINEAR)
+    t_img = cv2.warpPerspective(img, trans, (dims, dims))
     t_pts = np.matmul(trans, points_matrix(pts))
     t_pts = t_pts / t_pts[2]
     return t_img, t_pts[:2]
@@ -220,8 +220,10 @@ def apply_plate(image, points, plate):
     pts = rect_matrix(0, 0, plate.shape[1], plate.shape[0])
     t_pts = points_matrix(points)
     m = transform_matrix(pts, t_pts)
+    mask = np.ones_like(plate, dtype=np.uint8)
+    mask = cv2.warpPerspective(mask, m, (image.shape[1], image.shape[0]))
+    mask = (mask == 0).astype(np.uint8) * 255
     plate = cv2.warpPerspective(plate, m, (image.shape[1], image.shape[0]))
-    mask = (plate == 0).astype(np.uint8) * 255
     return mx.nd.array(cv2.bitwise_or(cv2.bitwise_and(image, mask), plate))
 
 
