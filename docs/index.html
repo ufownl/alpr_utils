@@ -13,7 +13,12 @@
   <body>
     <div id="app">
       <p>
-        server: <input v-model="server" type="text" />
+        <span>repository: </span>
+        <a href="https://github.com/ufownl/alpr_utils">https://github.com/ufownl/alpr_utils</a>
+      </p>
+      <p>
+        <span>server: </span>
+        <input v-model="server" type="text" />
       </p>
       <p>
         <input type="file" accept="image/*" @change="chooseImage" :disabled="processing" />
