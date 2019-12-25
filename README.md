@@ -2,6 +2,12 @@
 
 This is a DL model to detect & recognize Chinese license plates in unconstrained scenarios.
 
+![p1](/docs/1.png)
+![p2](/docs/2.png)
+![p3](/docs/3.png)
+![p4](/docs/4.png)
+![p5](/docs/5.png)
+
 ## Requirements
 
 * [Python3](https://www.python.org/)
