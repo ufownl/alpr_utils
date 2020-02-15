@@ -17,6 +17,7 @@
 
 
 import math
+import backbone
 import mxnet as mx
 from transformer_utils import MultiHeadAttention, PositionalEncoding, TimingEncoding, PositionalWiseFeedForward, EncoderLayer, AdaptiveComputationTime
 
@@ -26,22 +27,7 @@ class ImageEmbedding(mx.gluon.nn.Block):
         super(ImageEmbedding, self).__init__(**kwargs)
         with self.name_scope():
             self._block = mx.gluon.nn.Sequential()
-            self._block.add(
-                mx.gluon.nn.BatchNorm(scale=False, center=False),
-                mx.gluon.nn.Conv2D(dims // 8, 7, 2, 3),
-                mx.gluon.nn.BatchNorm(),
-                mx.gluon.nn.Activation("relu"),
-                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 8, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 8, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 4, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 4, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 2, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(dims // 2, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(dims, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(dims, 1),
-                mx.gluon.nn.BatchNorm(),
-                mx.gluon.nn.Activation("relu"),
-            )
+            backbone.add_layers(self._block, dims)
 
     def forward(self, x):
         y = self._block(x).transpose((0, 1, 3, 2))

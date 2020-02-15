@@ -16,6 +16,7 @@
 # along with alpr_utils.  If not, see <https://www.gnu.org/licenses/>.
 
 
+import backbone
 import mxnet as mx
 
 
@@ -39,23 +40,8 @@ class WpodNet(mx.gluon.nn.Block):
         super(WpodNet, self).__init__(**kwargs)
         with self.name_scope():
             self._block = mx.gluon.nn.Sequential()
-            self._block.add(
-                mx.gluon.nn.BatchNorm(scale=False, center=False),
-                mx.gluon.nn.Conv2D(32, 7, 2, 3),
-                mx.gluon.nn.BatchNorm(),
-                mx.gluon.nn.Activation("relu"),
-                mx.gluon.model_zoo.vision.BasicBlockV2(32, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(32, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(64, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(64, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(128, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(128, 1),
-                mx.gluon.model_zoo.vision.BasicBlockV2(256, 2, True),
-                mx.gluon.model_zoo.vision.BasicBlockV2(256, 1),
-                mx.gluon.nn.BatchNorm(),
-                mx.gluon.nn.Activation("relu"),
-                Detection()
-            )
+            backbone.add_layers(self._block, 256)
+            self._block.add(Detection())
 
     def forward(self, x):
         return self._block(x).transpose((0, 2, 3, 1))
