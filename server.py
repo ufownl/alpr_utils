@@ -172,7 +172,7 @@ def png_encode(img):
     f = io.BytesIO()
     w = png.Writer(width, height, greyscale=False)
     w.write(f, img.asnumpy())
-    return base64.b64encode(f.getvalue()).decode()
+    return "data:image/png;base64, " + base64.b64encode(f.getvalue()).decode()
 
 
 def fixed_crop(raw, bbox):
