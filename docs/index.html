@@ -36,7 +36,7 @@
       </p>
       <div>{{ message }}</div>
       <p v-for="res in results">
-        <img v-if="res.vehicle" :src="res.vehicle" alt="vehicle" />
+        <img v-if="res.image" :src="res.image" alt="vehicle" />
         <plate-table :plates="res.plates" />
       </p>
     </div>

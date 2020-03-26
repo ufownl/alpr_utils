@@ -75,7 +75,7 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
                 ret_plate = True
             result = [
                 dict(
-                    vehicle = png_encode(vehicle) if ret_vehicle else None,
+                    image = png_encode(vehicle) if ret_vehicle else None,
                     plates = [
                         dict(
                             image = png_encode(image) if ret_plate else None,
