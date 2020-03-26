@@ -61,19 +61,20 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
                     "CONTENT_TYPE": self.headers["Content-Type"]
                 }
             )
+            if not "image" in form:
+                self.send_error(http.HTTPStatus.BAD_REQUEST)
+                return
             result = [
-                [
-                    dict(
-                        automobile = png_encode(automobile),
-                        plates = [
-                            dict(
-                                image = png_encode(image),
-                                text = text,
-                                confidence = confidence
-                            ) for image, text, confidence in plates
-                        ]
-                    ) for automobile, plates in self._alpr(mx.image.imdecode(content).as_in_context(self.context))
-                ] for content in [form[k].value for k in form.keys()]
+                dict(
+                    automobile = png_encode(automobile),
+                    plates = [
+                        dict(
+                            image = png_encode(image),
+                            text = text,
+                            confidence = confidence
+                        ) for image, text, confidence in plates
+                    ]
+                ) for automobile, plates in self._alpr(mx.image.imdecode(form["image"].value).as_in_context(self.context))
             ]
             self.send_response(http.HTTPStatus.OK)
             self.send_header("Content-Type", "application/json; charset=utf-8")

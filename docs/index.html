@@ -106,7 +106,7 @@
                 return
               }
               this.message = ''
-              this.results = resp[0]
+              this.results = resp
             }
             xhr.onerror = () => {
               this.message = 'ERROR: Failed to call "' + url + '"'
