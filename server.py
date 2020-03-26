@@ -52,7 +52,7 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
         if not m or m.group(0) != self.path:
             self.send_error(http.HTTPStatus.BAD_REQUEST)
             return
-        if m.group(1) == "/alpr_utils/demo":
+        if m.group(1) == "/alpr_utils/run":
             form = cgi.FieldStorage(
                 fp = self.rfile,
                 headers = self.headers,
@@ -64,17 +64,26 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
             if not "image" in form:
                 self.send_error(http.HTTPStatus.BAD_REQUEST)
                 return
+            yolo = False
+            if "yolo" in form and form["yolo"].value == "true":
+                yolo = True
+            ret_vehicle = False
+            if "vehicle" in form and form["vehicle"].value == "true":
+                ret_vehicle = True
+            ret_plate = False
+            if "plate" in form and form["plate"].value == "true":
+                ret_plate = True
             result = [
                 dict(
-                    automobile = png_encode(automobile),
+                    vehicle = png_encode(vehicle) if ret_vehicle else None,
                     plates = [
                         dict(
-                            image = png_encode(image),
+                            image = png_encode(image) if ret_plate else None,
                             text = text,
                             confidence = confidence
                         ) for image, text, confidence in plates
                     ]
-                ) for automobile, plates in self._alpr(mx.image.imdecode(form["image"].value).as_in_context(self.context))
+                ) for vehicle, plates in self._alpr(mx.image.imdecode(form["image"].value).as_in_context(self.context), yolo)
             ]
             self.send_response(http.HTTPStatus.OK)
             self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -83,11 +92,11 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
         else:
             self.send_error(http.HTTPStatus.NOT_FOUND)
 
-    def _alpr(self, raw):
-        if self.yolo:
-            automobiles = self._detect_automobiles(raw)
+    def _alpr(self, raw, yolo):
+        if yolo:
+            vehicles = self._detect_vehicles(raw)
         else:
-            automobiles = [raw]
+            vehicles = [raw]
         return [
             (
                 raw, sorted([
@@ -95,10 +104,10 @@ class AlprHandler(http.server.BaseHTTPRequestHandler):
                         (img, prob, self._recognize_plate(img)) for img, prob in self._detect_plates(raw)
                     ]
                 ], key=lambda tup: tup[2], reverse=True)
-            ) for raw in automobiles
+            ) for raw in vehicles
         ]
 
-    def _detect_automobiles(self, raw):
+    def _detect_vehicles(self, raw):
         x, _ = data.transforms.presets.yolo.transform_test(raw, short=512)
         classes, scores, bboxes = self.yolo(x)
         bboxes[0, :, 0::2] = bboxes[0, :, 0::2] / x.shape[3] * raw.shape[1]
@@ -196,7 +205,6 @@ def _main():
     parser.add_argument("--plt_h", help="set the max height of output plate images (default: 48)", type=int, default=48)
     parser.add_argument("--seq_len", help="set the max length of output sequences (default: 8)", type=int, default=8)
     parser.add_argument("--beam_size", help="set the size of beam (default: 5)", type=int, default=5)
-    parser.add_argument("--no_yolo", help="Do not extract automobiles using YOLOv3", action="store_true")
     parser.add_argument("--addr", help="set address of ALPR server (default: 0.0.0.0)", type=str, default="0.0.0.0")
     parser.add_argument("--port", help="set port of ALPR server (default: 80)", type=int, default=80)
     parser.add_argument("--device_id", help="select device that the model using (default: 0)", type=int, default=0)
@@ -215,32 +223,19 @@ def _main():
     vocab.load("model/vocabulary.json")
     ocr = OcrNet((args.plt_h, args.plt_w), vocab.size(), args.seq_len)
     ocr.load_parameters("model/ocr_net.params", ctx=context)
-    if args.no_yolo:
-        handler = config_handler(
-            context = context,
-            dims = args.dims,
-            threshold = args.threshold,
-            plt_hw = (args.plt_h, args.plt_w),
-            seq_len = args.seq_len,
-            beam_size = args.beam_size,
-            wpod = wpod,
-            vocab = vocab,
-            ocr = ocr
-        )
-    else:
-        yolo = model_zoo.get_model('yolo3_darknet53_voc', pretrained=True, ctx=context)
-        handler = config_handler(
-            context = context,
-            dims = args.dims,
-            threshold = args.threshold,
-            plt_hw = (args.plt_h, args.plt_w),
-            seq_len = args.seq_len,
-            beam_size = args.beam_size,
-            wpod = wpod,
-            vocab = vocab,
-            ocr = ocr,
-            yolo = yolo
-        )
+    yolo = model_zoo.get_model('yolo3_darknet53_voc', pretrained=True, ctx=context)
+    handler = config_handler(
+        context = context,
+        dims = args.dims,
+        threshold = args.threshold,
+        plt_hw = (args.plt_h, args.plt_w),
+        seq_len = args.seq_len,
+        beam_size = args.beam_size,
+        wpod = wpod,
+        vocab = vocab,
+        ocr = ocr,
+        yolo = yolo
+    )
 
     httpd = http.server.HTTPServer((args.addr, args.port), handler)
     httpd.serve_forever()

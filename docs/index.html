@@ -17,16 +17,26 @@
         <a href="https://github.com/ufownl/alpr_utils">https://github.com/ufownl/alpr_utils</a>
       </p>
       <p>
-        <span>server: </span>
-        <input v-model="server" type="text" />
+        <label for="server">server</label>
+        <input v-model="server" type="text" id="server" />
       </p>
       <p>
-        <input type="file" accept="image/*" @change="chooseImage" :disabled="processing" />
-        <button @click="demo" :disabled="processing">Demo</button>
+        <div>
+          <input type="file" accept="image/*" @change="chooseImage" :disabled="processing" />
+          <button @click="run" :disabled="processing">Run</button>
+        </div>
+        <div>
+          <label for="yolo">Detect Vehicles</label>
+          <input v-model="yolo" type="checkbox" id="yolo" />
+          <label for="vehicle">Vehicle Images</label>
+          <input v-model="vehicle" type="checkbox" id="vehicle" />
+          <label for="plate">Plate Images</label>
+          <input v-model="plate" type="checkbox" id="plate" />
+        </div>
       </p>
       <div>{{ message }}</div>
       <p v-for="res in results">
-        <img :src="res.automobile" alt="automobile" />
+        <img v-if="res.vehicle" :src="res.vehicle" alt="vehicle" />
         <plate-table :plates="res.plates" />
       </p>
     </div>
@@ -47,7 +57,7 @@
               <th>confidence</th>\
             </tr>\
             <tr v-for="plt in plates">\
-              <td><img :src="plt.image" alt="plate" /></td>\
+              <td><img v-if="plt.image" :src="plt.image" alt="plate" /></td>\
               <td>{{ plt.text }}</td>\
               <td>{{ plt.confidence }}</td>\
             </tr>\
@@ -71,6 +81,9 @@
         data: {
           server: server ? server : 'http://localhost',
           image: undefined,
+          yolo: true,
+          vehicle: true,
+          plate: true,
           message: '',
           processing: false,
           results: []
@@ -79,7 +92,7 @@
           chooseImage(e) {
             this.image = e.target.files[0]
           },
-          demo() {
+          run() {
             if (!this.image) {
               this.message = 'Please select an image file!'
               return
@@ -88,7 +101,10 @@
             this.processing = true
             let form = new FormData()
             form.append('image', this.image)
-            let url = encodeURI(this.server + '/alpr_utils/demo')
+            form.append('yolo', this.yolo)
+            form.append('vehicle', this.vehicle)
+            form.append('plate', this.plate)
+            let url = encodeURI(this.server + '/alpr_utils/run')
             let xhr = new XMLHttpRequest()
             xhr.open('POST', url, true)
             xhr.onload = () => {
