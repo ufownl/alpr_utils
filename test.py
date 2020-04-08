@@ -134,15 +134,15 @@ def test(images, dims, threshold, plt_hw, seq_len, no_yolo, beam, beam_size, con
             classes, scores, bboxes = yolo(x.as_in_context(context))
             bboxes[0, :, 0::2] = bboxes[0, :, 0::2] / x.shape[3] * raw.shape[1]
             bboxes[0, :, 1::2] = bboxes[0, :, 1::2] / x.shape[2] * raw.shape[0]
-            automobiles = [
+            vehicles = [
                 fixed_crop(raw, bboxes[0, i]) for i in range(classes.shape[1])
                     if (yolo.classes[int(classes[0, i].asscalar())] == 'car' or
                         yolo.classes[int(classes[0, i].asscalar())] == 'bus') and
                         scores[0, i].asscalar() > 0.5
             ]
             print("yolo profiling: %f" % (time.time() - ts))
-            for i, raw in enumerate(automobiles):
-                print("automobile[%d]:" % i)
+            for i, raw in enumerate(vehicles):
+                print("vehicle[%d]:" % i)
                 detect_plate(wpod, vocab, ocr, raw, dims, threshold, plt_hw, beam, beam_size, context)
 
 
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     parser.add_argument("--plt_w", help="set the max width of output plate images (default: 144)", type=int, default=144)
     parser.add_argument("--plt_h", help="set the max height of output plate images (default: 48)", type=int, default=48)
     parser.add_argument("--seq_len", help="set the max length of output sequences (default: 8)", type=int, default=8)
-    parser.add_argument("--no_yolo", help="do not extract automobiles using YOLOv3", action="store_true")
+    parser.add_argument("--no_yolo", help="do not extract vehicles using YOLOv3", action="store_true")
     parser.add_argument("--beam", help="using beam search", action="store_true")
     parser.add_argument("--beam_size", help="set the size of beam (default: 5)", type=int, default=5)
     parser.add_argument("--device_id", help="select device that the model using (default: 0)", type=int, default=0)
