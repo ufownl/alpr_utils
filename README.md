@@ -94,7 +94,6 @@ optional arguments:
   --seq_len SEQ_LEN     set the max length of output sequences (default: 8)
   --beam_size BEAM_SIZE
                         set the size of beam (default: 5)
-  --no_yolo             Do not extract automobiles using YOLOv3
   --addr ADDR           set address of ALPR server (default: 0.0.0.0)
   --port PORT           set port of ALPR server (default: 80)
   --device_id DEVICE_ID
